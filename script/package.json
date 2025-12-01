@@ -1,0 +1,30 @@
+{
+  "name": "vara-eth-manderlbrot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create:checkers": "MODE=create-checkers ts-node --esm src/run-mandelbrot.ts",
+    "create:manager": "MODE=run-manager ts-node --esm src/run-mandelbrot.ts",
+    "run:mandelbrot": "MODE=full ts-node --esm src/run-mandelbrot.ts"
+    },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gear-js/api": "^0.44.2",
+    "@vara-eth/api": "^0.0.1",
+    "dotenv": "^17.2.3",
+    "kzg-wasm": "^1.0.0",
+    "sails-js": "^0.5.1",
+    "sails-js-parser": "^0.5.1",
+    "viem": "^2.40.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
