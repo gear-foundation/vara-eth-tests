@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "create:checkers": "MODE=create-checkers ts-node --esm src/run-mandelbrot.ts",
     "create:manager": "MODE=run-manager ts-node --esm src/run-mandelbrot.ts",
-    "run:mandelbrot": "MODE=full ts-node --esm src/run-mandelbrot.ts"
+    "workflow:full": "MODE=full ts-node --esm src/run-mandelbrot.ts"
     },
   "keywords": [],
   "author": "",
