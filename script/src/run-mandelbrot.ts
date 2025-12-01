@@ -348,8 +348,8 @@ async function runManagerFlow(
   // GenerateAndStorePoints
   const genPointsPayloadBytes =
     sails.services.Manager.functions.GenerateAndStorePoints.encodePayload(
-      400,  // width
-      400,  // height
+      100,  // width
+      100,  // height
       -2,   // x_min
       0,    // x_min_frac
       1,    // x_max
@@ -377,7 +377,7 @@ async function runManagerFlow(
 
   // caculate 
   const checkPayloadBytes =
-    sails.services.Manager.functions.CheckPointsSet.encodePayload(1000, 40, 800);
+    sails.services.Manager.functions.CheckPointsSet.encodePayload(1000, 40, 67);
 
   await sendManagerMessage(mirror, checkPayloadBytes);
   await getCheckedCount(sails, api, ethereumClient, programId);
