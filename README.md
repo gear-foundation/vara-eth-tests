@@ -1,11 +1,3 @@
-Got it — since `workflow:full` already exists, here’s a clear step-by-step list of what someone needs to do from scratch.
-
-You can paste this as-is into the README, or just use it yourself.
-
----
-
-### Step-by-step guide
-
 1. **Build the smart contracts**
 
    From the repo root:
