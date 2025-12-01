@@ -14,7 +14,7 @@
    yarn
    ```
 
-3. **Run the full workflow (recommended)**
+3. **Run the full workflow**
 
    This will:
 
@@ -27,18 +27,15 @@
    yarn workflow:full
    ```
 
-4. **(Optional) Run parts separately**
+4. **Run parts separately**
 
-   If you want more control:
-
-   * Only deploy checker programs:
-
-     ```bash
-     yarn create:checkers
-     ```
-
-   * Only deploy and run the manager (using existing checker list):
-
-     ```bash
-     yarn create:manager
-     ```
+   If the checker programs are already deployed, you don’t need to deploy them again — you can run only the manager part that performs the point computations.
+Because of that, you can run the workflow in separate steps:
+- Only deploy checker programs (e.g. first time, or when you want a fresh set):
+    ```bash
+    yarn create:checkers
+    ```
+- Only run the manager (using an existing list of checker programs):
+    ```bash
+    yarn create:manager
+    ```
