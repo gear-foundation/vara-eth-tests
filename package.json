@@ -4,17 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "create:checkers": "MODE=create-checkers ts-node --esm src/run-mandelbrot.ts",
-    "create:manager": "MODE=run-manager ts-node --esm src/run-mandelbrot.ts",
-    "workflow:full": "MODE=full ts-node --esm src/run-mandelbrot.ts"
-    },
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "clean": "rm -r node_modules pnpm-lock.yaml"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gear-js/api": "^0.44.2",
-    "@vara-eth/api": "^0.0.1",
+    "@vara-eth/api": "^0.0.2",
     "dotenv": "^17.2.3",
     "kzg-wasm": "^1.0.0",
     "sails-js": "^0.5.1",
@@ -23,8 +21,12 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@vitest/ui": "^4.0.15",
+    "happy-dom": "^20.0.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
-  }
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "packageManager": "pnpm@10.16.1+sha512.0e155aa2629db8672b49e8475da6226aa4bdea85fdcdfdc15350874946d4f3c91faaf64cbdc4a5d1ab8002f473d5c3fcedcd197989cf0390f9badd3c04678706"
 }
