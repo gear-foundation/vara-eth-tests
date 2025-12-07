@@ -1,3 +1,8 @@
-target
-node_modules
+target/
+node_modules/
+tmp/
+html/
+
 checker-programs.json
+
+.env
