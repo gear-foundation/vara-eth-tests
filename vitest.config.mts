@@ -6,9 +6,10 @@ class CustomSequencer implements TestSequencer {
   sort(files) {
     const order = [
       "setup.test.ts",
-      "balance.test.ts",
-      "checkers.test.ts",
-      "manager.test.ts",
+      "vft.test.ts"
+      //"balance.test.ts",
+      //"checkers.test.ts",
+     // "manager.test.ts",
     ];
 
     return [...files].sort((a, b) => {

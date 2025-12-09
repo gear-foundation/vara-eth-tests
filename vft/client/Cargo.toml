@@ -1,5 +1,5 @@
 [package]
-name = "manager-client"
+name = "extended-vft-client"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,8 @@ edition = "2021"
 mockall = { version = "0.12", optional = true }
 sails-rs.workspace = true
 
-
 [build-dependencies]
-manager-app = { path = "../app" }
+extended-vft-app = { path = "../app" }
 sails-client-gen.workspace = true
 sails-idl-gen.workspace = true
 
