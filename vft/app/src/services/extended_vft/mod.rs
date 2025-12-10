@@ -32,7 +32,7 @@ pub struct ExtendedService {
 }
 
 impl ExtendedService {
-    pub fn create() -> Self {
+    pub fn new() -> Self {
         Self {
             vft: VftService::new(),
         }
