@@ -14,15 +14,36 @@ import { readFileSync } from "node:fs";
 import { CONFIG } from "../config";
 
 let vftId: Hex;
-//let vftId = '0x5564a4e90bf53ce713de30161602a4fd696d6e7e' as Hex;
 let stateHash: Hex;
+let codeId: Hex;
 
 const IDL_PATH = "./target/wasm32-gear/release/extended_vft.idl";
+const WASM_PATH = "./target/wasm32-gear/release/extended_vft.opt.wasm";
+
 const idlContent = readFileSync(IDL_PATH, "utf-8");
+const codeBytes = new Uint8Array(readFileSync(WASM_PATH));
+
 describe("create token", () => {
-  const codeId = process.env.TOKEN_ID! as Hex;
+  const envCodeId = process.env.TOKEN_ID as Hex;
   const TOP_UP_AMOUNT = BigInt(100 * 1e12);
   let mirror: MirrorClient;
+
+  test("should upload CODE_ID", async () => {
+    const tx = await ethereumClient.router.requestCodeValidation(codeBytes);
+    const receipt = await tx.sendAndWaitForReceipt();
+    console.log('Transaction confirmed:', receipt.transactionHash);
+    // for now upload code doesnt work so define codeId here
+    codeId = tx.codeId;
+    console.log(codeId)
+    const validated = await tx.waitForCodeGotValidated();
+    if (!validated) {
+      console.warn("Code validation failed, using TOKEN_ID from env");
+      expect(envCodeId).toBeDefined();
+      codeId = envCodeId;
+    }
+    codeId = tx.codeId as Hex;
+    console.log("Using uploaded CODE_ID:", codeId);
+  });
 
   test("should check CODE_ID", () => {
     expect(codeId).toBeDefined();
@@ -41,7 +62,7 @@ describe("create token", () => {
 
     expect(programId).toBeDefined();
     vftId = programId;
-    console.log("New manager program created:", programId);
+    console.log("New vft program created:", programId);
   });
 
   test("should wait for program appeared on Vara.Eth", async () => {
@@ -222,8 +243,8 @@ describe("send messages: mint", () => {
                 value: 0n,    
                 recipient: '0xCC4E78EA999374E348E6D583af19b0F0E6689DE8'                      
               });
-        // const result = await injected.send();;
-        // expect(result).toBe("Accept");
+        const result = await injected.send();;
+        expect(result).toBe("Accept");
         const promise = await injected.sendAndWaitForPromise();
         console.log(promise)
         console.log(promise.reply.code)
@@ -260,8 +281,8 @@ describe("send messages: mint", () => {
               recipient: '0xaEe0Cc6CAa1cFbee638470a995b9Bb75c1aB0972'
         });
 
-        // const result = await injected.send();
-        // expect(result).toBe("Accept");
+        const result = await injected.send();
+        expect(result).toBe("Accept");
         const promise = await injected.sendAndWaitForPromise();
         console.log(promise)
         console.log(promise.reply.code)
