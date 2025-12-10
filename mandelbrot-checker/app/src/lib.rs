@@ -55,8 +55,7 @@ pub struct MandelbrotCheckerProgram(());
 
 #[sails_rs::program]
 impl MandelbrotCheckerProgram {
-    pub fn new() -> Self {
-        sails_rs::gstd::debug!("BALANCE {:?}", sails_rs::gstd::exec::value_available());
+    pub fn init() -> Self {
         Self(())
     }
 

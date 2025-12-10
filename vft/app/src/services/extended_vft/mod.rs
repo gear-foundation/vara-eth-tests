@@ -32,7 +32,7 @@ pub struct ExtendedService {
 }
 
 impl ExtendedService {
-    pub fn new() -> Self {
+    pub fn create() -> Self {
         Self {
             vft: VftService::new(),
         }
@@ -79,9 +79,9 @@ impl ExtendedService {
     #[export]
     pub fn mint(&mut self, to: String, value: String) -> bool {
         sails_rs::gstd::debug!("MINT MSG SOURCE {:?}", msg::source());
-        if !self.get().minters.contains(&msg::source()) {
-            panic!("Not allowed to mint")
-        };
+        // if !self.get().minters.contains(&msg::source()) {
+        //     panic!("Not allowed to mint")
+        // };
 
         let to_id = parse_actor(&to);
         let value_u256 = parse_u256(&value);
