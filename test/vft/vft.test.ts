@@ -110,7 +110,7 @@ describe("create token", () => {
       stateHash = newStateHash;
     });
 
-   test("should check executable balance", async () => {
+   test("should check that executable balance is equal to TOP_UP_AMOUNT", async () => {
       const state = await varaEthApi.query.program.readState(stateHash);
   
       expect(BigInt(state.executableBalance)).toBe(TOP_UP_AMOUNT);

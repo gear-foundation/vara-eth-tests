@@ -1,3 +1,50 @@
+## Test coverage
+
+The current end-to-end tests cover the full lifecycle of the VFT program on Vara-Eth.
+
+### Deployment & funding (`create token` suite)
+
+- ❌ Uploads the VFT code to Vara-Eth.
+- ✅ Verifies that the final `codeId` is well-formed.
+- ✅ Creates a new VFT program from the uploaded `codeId`.
+- ✅ Waits until the program appears on Vara-Eth.
+- ✅ Approves wVARA for the VFT program on Ethereum.
+- ✅  Tops up the program executable balance.
+- ✅  Reads program state from Vara-Eth and checks that `executableBalance == TOP_UP_AMOUNT`.
+- ✅  Parses the generated IDL (`extended_vft.idl`).
+- ✅  Sends the init message and checks:
+  - transaction status is `success`,
+  - reply code is `0x00000000`.
+
+### Metadata queries (`metadata` suite)
+
+- ✅  Reads the token `name` via a handle query and verifies it equals `"Name"`.
+- ✅  Reads the token `symbol` and verifies it equals `"Symbol"`.
+- ✅  Reads the token `decimals` and verifies it equals `12`.
+
+### Messages throur mirror: mint (`send messages: mint` suite)
+
+- ✅  Sends a `Mint` message through mirror:
+  - checks that the transaction succeeds on Ethereum,
+  - checks reply code is `0x00010000`,
+  - decodes the result and verifies it is `true`.
+- ✅ Queries `BalanceOf(address)` and verifies that the balance equals the minted amount.
+- ✅ Verifies that the program executable balance decreases after calls
+      by comparing `executableBalance` before and after.
+
+### Injected transactions: transfer (`injected txs: transfer` suite)
+- ❌ Sends an injected `Transfer`:
+  - sends the injected transaction and checks that `send()` returns `"Accept"`,
+  - waits for the promise from `sendAndWaitForPromise()` to resolve.
+- ❌ Queries `BalanceOf(recipient)` and verifies that the balance equals the transferred amount.
+
+### Injected transactions: mint (`injected txs: mint` suite)
+
+- ❌ Sends an injected `Mint` transaction:
+  - sends the injected transaction and checks that `send()` returns `"Accept"`,
+  - waits for the promise from `sendAndWaitForPromise()` to resolve.
+- ❌ Queries `BalanceOf(recipient)` and verifies that the balance equals the minted amount.
+
 ## Setup Instructions
 ### 1. Environment configuration
 
