@@ -9,7 +9,6 @@ use manager_client::traits::*;
 use mandelbrot_checker_client::traits::*;
 const ACTOR_ID: u64 = 42;
 
-
 #[tokio::test]
 async fn check_points_set() {
     let system = System::new();

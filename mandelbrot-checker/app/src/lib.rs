@@ -55,8 +55,7 @@ pub struct MandelbrotCheckerProgram(());
 
 #[sails_rs::program]
 impl MandelbrotCheckerProgram {
-    pub fn new() -> Self {
-        sails_rs::gstd::debug!("BALANCE {:?}", sails_rs::gstd::exec::value_available());
+    pub fn init() -> Self {
         Self(())
     }
 
@@ -159,7 +158,6 @@ impl Mul for Q32_32 {
     }
 }
 
-
 impl FixedPoint {
     pub fn to_q32(&self) -> Q32_32 {
         Q32_32::from_num_scale10(self.num, self.scale)
@@ -207,13 +205,13 @@ mod tests {
         let scale10: u32 = 1;
 
         let cases: &[(i64, i64)] = &[
-            (0, 0),   // 0 + 0i 
+            (0, 0),   // 0 + 0i
             (-10, 0), // -1.0 + 0i
             (-5, 0),  // -0.5 + 0i
-            (5, 5),   // 0.5 + 0.5i 
+            (5, 5),   // 0.5 + 0.5i
             (15, 0),  // 1.5 + 0i
-            (20, 0),  // 2.0 + 0i 
-            (20, 20), // 2.0 + 2.0i 
+            (20, 0),  // 2.0 + 0i
+            (20, 20), // 2.0 + 2.0i
         ];
 
         for &(re_num, im_num) in cases {

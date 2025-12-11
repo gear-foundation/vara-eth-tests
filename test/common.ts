@@ -32,6 +32,7 @@ export async function init() {
     CONFIG.eth.router,
   );
 
+  console.log(CONFIG.varaEth.rpc)
   const provider = new WsVaraEthProvider(CONFIG.varaEth.rpc);
   varaEthApi = new VaraEthApi(provider, ethereumClient);
 
