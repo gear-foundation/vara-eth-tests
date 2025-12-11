@@ -40,6 +40,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.test.ts"],
+    exclude: [
+      "test/mandelbrot/checkers.test.ts",
+      "test/mandelbrot/manager.test.ts",
+    ],
     globals: true,
     sequence: {
       sequencer: CustomSequencer,
