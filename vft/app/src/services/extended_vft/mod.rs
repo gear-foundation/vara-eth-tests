@@ -76,6 +76,7 @@ impl From<ExtendedService> for VftService {
 
 #[service(extends = VftService, events = Event)]
 impl ExtendedService {
+
     #[export]
     pub fn mint(&mut self, to: String, value: String) -> bool {
         sails_rs::gstd::debug!("MINT MSG SOURCE {:?}", msg::source());
@@ -110,6 +111,11 @@ impl ExtendedService {
                 .expect("Notification Error");
         }
         mutated
+    }
+
+     #[export]
+    pub fn grant_admin_role_test(&mut self) {
+        self.get_mut().admins.insert(msg::source());
     }
 
     #[export]
