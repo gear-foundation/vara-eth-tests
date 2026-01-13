@@ -182,37 +182,33 @@ describe("metadata", () => {
     });
 });
 
-describe("injected test: add admin", () => {
+describe("send messages: mint", () => {
       let mirror: MirrorClient;
-      test("add admins 2 times", async () => {
+      const varaAddress = "kGfXzQ99jakxFMQEox9mQfewMmBDbcKKoC7mvNs9t63LksbWk";
+      const varaAmount = "10000000000000"
+      test("should mint tokens", async () => {
         mirror = getMirrorClient(vftId, walletClient, publicClient);
-        const payload = sails.services.Vft.functions.GrantAdminRoleTest.encodePayload();
+        const payload = sails.services.Vft.functions.Mint.encodePayload(varaAddress, varaAmount);
 
-        const injected1 = await varaEthApi.createInjectedTransaction({
-          destination: vftId,              
-          payload, // Encoded message payload
-          value: 0n,    
-        });
+        const tx = await mirror.sendMessage(payload);
+        const receipt = await tx.sendAndWaitForReceipt();
 
-        const promise1 = await injected1.sendAndWaitForPromise();
-        console.log(promise1)
-        console.log(promise1.reply.code)
+        expect(receipt.status).toBe("success");
+
+        const { waitForReply } = await tx.setupReplyListener();
+        const reply = await waitForReply();
+
+        expect(reply.replyCode).toBe("0x00010000");
+        const result = sails.services.Vft.functions.Mint.decodeResult(reply.payload);
+        console.log('Result:', result);
+        expect(result).toBe(true);
         await wait1Block();
-
-        const injected2 = await varaEthApi.createInjectedTransaction({
-          destination: vftId,              
-          payload, // Encoded message payload
-          value: 0n,    
-        });
-
-        const promise2 = await injected2.sendAndWaitForPromise();
-        console.log(promise2)
-        console.log(promise2.reply.code)
+        await wait1Block();
         await wait1Block();
      });
 
-     test("should return admins", async () => {
-        const queryPayload = sails.services.Vft.queries.Admins.encodePayload();
+     test("should return the increased balance", async () => {
+        const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
 
         const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
             ethereumClient.accountAddress,
@@ -220,131 +216,92 @@ describe("injected test: add admin", () => {
             queryPayload as `0x${string}`,
         );
 
-        const admins = sails.services.Vft.queries.Admins.decodeResult(
+        const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
             queryReply.payload,
         );
-        console.log(admins)
+         expect(balance).toBe(varaAmount);
       
      });
-      
+        
+     test("program executable balance decreases after calls", async () => {
+        let state = await varaEthApi.query.program.readState(stateHash);
+  
+        const balanceBefore = state.executableBalance;
+        const newStateHash = await mirror.stateHash();
+        state = await varaEthApi.query.program.readState(newStateHash);
+        const balanceAfter = state.executableBalance;
+        expect(balanceAfter).toBeLessThan(balanceBefore);
+
+     });
  }); 
 
+ describe("injected txs: transfer", () => {
+      const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
+      const varaAmount = "10000000000000"
+      test("should transfer tokens", async () => {
+        const payload = sails.services.Vft.functions.Transfer.encodePayload(varaAddress, varaAmount);
+        const injected = await varaEthApi.createInjectedTransaction({
+                destination: vftId,              
+                payload, // Encoded message payload
+                value: 0n,    
+              });
+        const promise = await injected.sendAndWaitForPromise();
+        console.log(promise)
+        console.log(promise.reply.code)
+         await wait1Block();
+          await wait1Block();
+           await wait1Block();
+     });
 
-// describe("send messages: mint", () => {
-//       let mirror: MirrorClient;
-//       const varaAddress = "kGfXzQ99jakxFMQEoxAEy4kSdK4hat21vVWF1PtL1BWaxeyts";
-//       const varaAmount = "10000000000000"
-//       test("should mint tokens", async () => {
-//         mirror = getMirrorClient(vftId, walletClient, publicClient);
-//         const payload = sails.services.Vft.functions.Mint.encodePayload(varaAddress, varaAmount);
+     test("should return the increased balance", async () => {
 
-//         const tx = await mirror.sendMessage(payload);
-//         const receipt = await tx.sendAndWaitForReceipt();
+        const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
 
-//         expect(receipt.status).toBe("success");
+        const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
+            ethereumClient.accountAddress,
+            vftId,
+            queryPayload as `0x${string}`,
+        );
 
-//         const { waitForReply } = await tx.setupReplyListener();
-//         const reply = await waitForReply();
+        const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
+            queryReply.payload,
+        );
+        expect(balance).toBe(varaAmount);
 
-//         expect(reply.replyCode).toBe("0x00010000");
-//         const result = sails.services.Vft.functions.Mint.decodeResult(reply.payload);
-//         console.log('Result:', result);
-//         expect(result).toBe(true);
-//         await wait1Block();
-//      });
+     });
+});
 
-//      test("should return the increased balance", async () => {
-//         const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
 
-//         const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
-//             ethereumClient.accountAddress,
-//             vftId,
-//             queryPayload as `0x${string}`,
-//         );
-
-//         const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
-//             queryReply.payload,
-//         );
-//          expect(balance).toBe(varaAmount);
-      
-//      });
+ describe("injected txs: mint", () => {
+      const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
+      const varaAmount = "10000000000000"
+      test("should mint tokens", async () => {
+        const payload = sails.services.Vft.functions.Mint.encodePayload(varaAddress, varaAmount);
+        const injected = await varaEthApi.createInjectedTransaction( {
+              destination: vftId,
+              payload,
+              value: 0n,
+        });
+        const promise = await injected.sendAndWaitForPromise();
+        console.log(promise)
+        console.log(promise.reply.code)
         
-//      test("program executable balance decreases after calls", async () => {
-//         let state = await varaEthApi.query.program.readState(stateHash);
-  
-//         const balanceBefore = state.executableBalance;
-//         const newStateHash = await mirror.stateHash();
-//         state = await varaEthApi.query.program.readState(newStateHash);
-//         const balanceAfter = state.executableBalance;
-//         expect(balanceAfter).toBeLessThan(balanceBefore);
+     });
 
-//      });
-//  }); 
+     test("should return the increased balance", async () => {
 
-//  describe("injected txs: transfer", () => {
-//       const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
-//       const varaAmount = "10000000000000"
-//       test("should transfer tokens", async () => {
-//         const payload = sails.services.Vft.functions.Transfer.encodePayload(varaAddress, varaAmount);
-//         const injected = await varaEthApi.createInjectedTransaction({
-//                 destination: vftId,              
-//                 payload, // Encoded message payload
-//                 value: 0n,    
-//               });
-//         const promise = await injected.sendAndWaitForPromise();
-//         console.log(promise)
-//         console.log(promise.reply.code)
-//      });
+        const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
 
-//      test("should return the increased balance", async () => {
+        const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
+            ethereumClient.accountAddress,
+            vftId,
+            queryPayload as `0x${string}`,
+        );
 
-//         const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
+        const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
+            queryReply.payload,
+        );
+        expect(balance).toBe(varaAmount);
 
-//         const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
-//             ethereumClient.accountAddress,
-//             vftId,
-//             queryPayload as `0x${string}`,
-//         );
-
-//         const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
-//             queryReply.payload,
-//         );
-//         expect(balance).toBe(varaAmount);
-
-//      });
-// });
-
-
-//  describe("injected txs: mint", () => {
-//       const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
-//       const varaAmount = "10000000000000"
-//       test("should mint tokens", async () => {
-//         const payload = sails.services.Vft.functions.Mint.encodePayload(varaAddress, varaAmount);
-//         const injected = await varaEthApi.createInjectedTransaction( {
-//               destination: vftId,
-//               payload,
-//               value: 0n,
-//         });
-//         const promise = await injected.sendAndWaitForPromise();
-//         console.log(promise)
-//         console.log(promise.reply.code)
-        
-//      });
-
-//      test("should return the increased balance", async () => {
-
-//         const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
-
-//         const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
-//             ethereumClient.accountAddress,
-//             vftId,
-//             queryPayload as `0x${string}`,
-//         );
-
-//         const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
-//             queryReply.payload,
-//         );
-//         expect(balance).toBe(varaAmount);
-
-//      });
-// });
+     });
+});

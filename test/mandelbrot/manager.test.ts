@@ -14,12 +14,11 @@ import { readFileSync } from "node:fs";
 import { CONFIG } from "../config";
 
 let managerId: Hex;
-
+const IDL_PATH = "./target/wasm32-gear/release/manager.idl";
+const idlContent = readFileSync(IDL_PATH, "utf-8");
 describe("create manager", () => {
   const codeId = process.env.MANAGER_CODE_ID! as Hex;
   const TOP_UP_AMOUNT = BigInt(1000 * 1e12);
-
-  const INIT_PAYLOAD = "0x0c4e6577";
 
   let stateHash: Hex;
 
@@ -86,6 +85,7 @@ describe("create manager", () => {
     unwatch();
 
     stateHash = newStateHash;
+    console.log(stateHash)
   });
 
   test("should check executable balance", async () => {
@@ -94,9 +94,13 @@ describe("create manager", () => {
     expect(BigInt(state.executableBalance)).toBe(TOP_UP_AMOUNT);
   });
 
+  test("should parse idl and create mirror client", () => {
+    sails.parseIdl(idlContent);
+  });
+
   test("should send init messages", async () => {
     const mirror = getMirrorClient(managerId, walletClient, publicClient);
-    const tx = await mirror.sendMessage(INIT_PAYLOAD);
+    const tx = await mirror.sendMessage(sails.ctors.New.encodePayload());
     const result = await tx.sendAndWaitForReceipt();
     expect(result.status).toBe("success");
     const { waitForReply } = await tx.setupReplyListener();
@@ -108,8 +112,6 @@ describe("create manager", () => {
 });
 
 describe("send messages", () => {
-  const IDL_PATH = "./target/wasm32-gear/release/manager.idl";
-  const idlContent = readFileSync(IDL_PATH, "utf-8");
   let mirror: MirrorClient;
 
   const checkerIds: Hex[] = JSON.parse(

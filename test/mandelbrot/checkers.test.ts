@@ -2,15 +2,20 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { getMirrorClient } from "@vara-eth/api";
 import { Hex } from "viem";
 import path from "node:path";
-
+import { readFileSync } from "node:fs";
+import { Sails } from "sails-js";
 import {
   publicClient,
   walletClient,
   varaEthApi,
   ethereumClient,
   wait1Block,
+  sails,
 } from "../common";
 import { CONFIG } from "../config";
+
+const IDL_PATH = "./target/wasm32-gear/release/mandelbrot_checker.idl";
+const idlContent = readFileSync(IDL_PATH, "utf-8");
 
 describe("create checkers", () => {
   const codeId = process.env.CHECKER_CODE_ID! as Hex;
@@ -18,8 +23,6 @@ describe("create checkers", () => {
   const checkerIds: Hex[] = [];
   const TOP_UP_AMOUNT = BigInt(100 * 1e12);
   const stateHashes = new Map<Hex, Hex>();
-
-  const INIT_PAYLOAD = "0x0c4e6577";
 
   test("should check CODE_ID", () => {
     expect(codeId).toBeDefined();
@@ -126,11 +129,13 @@ describe("create checkers", () => {
     }
   });
 
+
   test("should send init messages", async () => {
     const promises = [];
+    let sails = pa
     for (const id of checkerIds) {
       const mirror = getMirrorClient(id, walletClient, publicClient);
-      const tx = await mirror.sendMessage(INIT_PAYLOAD);
+      const tx = await mirror.sendMessage(sails.ctors.Init.encodePayload())
       const result = await tx.sendAndWaitForReceipt();
       expect(result.status).toBe("success");
       const { waitForReply } = await tx.setupReplyListener();

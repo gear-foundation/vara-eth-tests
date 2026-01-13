@@ -1,0 +1,15 @@
+constructor {
+  Init : ();
+};
+
+service DigitRecognition {
+  /// Applies the first convolutional layer
+  Predict : (pixels: vec u16) -> null;
+  SetConv1Weights : (weights: vec struct { i128, u32 }, bias: vec struct { i128, u32 }) -> null;
+  SetConv2Weights : (weights: vec struct { i128, u32 }, bias: vec struct { i128, u32 }) -> null;
+  SetFc1Weights : (weights: vec struct { i128, u32 }, bias: vec struct { i128, u32 }) -> bool;
+  SetFc2Weights : (weights: vec struct { i128, u32 }, bias: vec struct { i128, u32 }) -> null;
+  query LayersSet : () -> struct { bool, bool, bool, bool };
+  query Result : () -> vec struct { i128, u32 };
+};
+
