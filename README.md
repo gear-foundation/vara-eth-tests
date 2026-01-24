@@ -33,17 +33,17 @@ The current end-to-end tests cover the full lifecycle of the VFT program on Vara
       by comparing `executableBalance` before and after.
 
 ### Injected transactions: transfer (`injected txs: transfer` suite)
-- ❌ Sends an injected `Transfer`:
-  - sends the injected transaction and checks that `send()` returns `"Accept"`,
-  - waits for the promise from `sendAndWaitForPromise()` to resolve.
-- ❌ Queries `BalanceOf(recipient)` and verifies that the balance equals the transferred amount.
+- ✅ Sends an injected `Transfer`:
+   - sends the injected transaction and checks that `send()` returns `"Accept"`,
+   - waits for the promise from `sendAndWaitForPromise()` to resolve.
+- ✅ Queries `BalanceOf(recipient)` and verifies that the balance equals the transferred amount.
 
 ### Injected transactions: mint (`injected txs: mint` suite)
 
-- ❌ Sends an injected `Mint` transaction:
-  - sends the injected transaction and checks that `send()` returns `"Accept"`,
-  - waits for the promise from `sendAndWaitForPromise()` to resolve.
-- ❌ Queries `BalanceOf(recipient)` and verifies that the balance equals the minted amount.
+ - ✅ Sends an injected `Mint` transaction:
+   - sends the injected transaction and checks that `send()` returns `"Accept"`,
+   - waits for the promise from `sendAndWaitForPromise()` to resolve.
+- ✅ Queries `BalanceOf(recipient)` and verifies that the balance equals the minted amount.
 
 ## Setup Instructions
 ### 1. Environment configuration
