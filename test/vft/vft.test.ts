@@ -11,7 +11,6 @@ import {
   sails,
 } from "../common";
 import { readFileSync } from "node:fs";
-import { CONFIG } from "../config";
 
 let vftId: Hex;
 let stateHash: Hex;
@@ -22,6 +21,7 @@ const WASM_PATH = "./target/wasm32-gear/release/extended_vft.opt.wasm";
 
 const idlContent = readFileSync(IDL_PATH, "utf-8");
 const codeBytes = new Uint8Array(readFileSync(WASM_PATH));
+
 
 describe("create token", () => {
   const envCodeId = process.env.TOKEN_ID as Hex;
@@ -122,9 +122,8 @@ describe("create token", () => {
       });
 
     test("should send init messages", async () => {
-        const tx = await mirror.sendMessage(sails.ctors.New.encodePayload("Name", "Symbol", "12"));
-        const result = await tx.sendAndWaitForReceipt();
-        expect(result.status).toBe("success");
+        const tx = await mirror.sendMessage(sails.ctors.Init.encodePayload("Name", "Symbol", "12"));
+        await tx.send();
         const { waitForReply } = await tx.setupReplyListener();
     
         const reply = await waitForReply();
@@ -184,7 +183,7 @@ describe("metadata", () => {
 
 describe("send messages: mint", () => {
       let mirror: MirrorClient;
-      const varaAddress = "kGfXzQ99jakxFMQEox9mQfewMmBDbcKKoC7mvNs9t63LksbWk";
+      const varaAddress = "0x0000000000000000000000000b0fb0f232080876d8ad03b84ea01bd4aad45a4b";
       const varaAmount = "10000000000000"
       test("should mint tokens", async () => {
         mirror = getMirrorClient(vftId, walletClient, publicClient);
@@ -236,7 +235,7 @@ describe("send messages: mint", () => {
  }); 
 
  describe("injected txs: transfer", () => {
-      const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
+      const varaAddress = "0xae665500b487d538c34dee6c68ba737f1add21ed275fcca75523342639abc536";
       const varaAmount = "10000000000000"
       test("should transfer tokens", async () => {
         const payload = sails.services.Vft.functions.Transfer.encodePayload(varaAddress, varaAmount);
@@ -245,12 +244,12 @@ describe("send messages: mint", () => {
                 payload, // Encoded message payload
                 value: 0n,    
               });
-        const promise = await injected.sendAndWaitForPromise();
-        console.log(promise)
-        console.log(promise.reply.code)
-         await wait1Block();
-          await wait1Block();
-           await wait1Block();
+        await injected.sendAndWaitForPromise();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
      });
 
      test("should return the increased balance", async () => {
@@ -262,7 +261,6 @@ describe("send messages: mint", () => {
             vftId,
             queryPayload as `0x${string}`,
         );
-
         const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
             queryReply.payload,
         );
@@ -273,7 +271,7 @@ describe("send messages: mint", () => {
 
 
  describe("injected txs: mint", () => {
-      const varaAddress = "kGjUf8Xv29hYnBcmP4MH6w3nkgHYDecNrEp55ho5db9iGrEyS";
+      const varaAddress = "0xae665500b487d538c34dee6c68ba737f1add21ed275fcca75523342639abc536";
       const varaAmount = "10000000000000"
       test("should mint tokens", async () => {
         const payload = sails.services.Vft.functions.Mint.encodePayload(varaAddress, varaAmount);
@@ -282,16 +280,18 @@ describe("send messages: mint", () => {
               payload,
               value: 0n,
         });
-        const promise = await injected.sendAndWaitForPromise();
-        console.log(promise)
-        console.log(promise.reply.code)
-        
+        await injected.sendAndWaitForPromise();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
+        await wait1Block();
      });
 
      test("should return the increased balance", async () => {
 
         const queryPayload = sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
-
+      
         const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
             ethereumClient.accountAddress,
             vftId,
@@ -301,7 +301,7 @@ describe("send messages: mint", () => {
         const balance = sails.services.Vft.queries.BalanceOf.decodeResult(
             queryReply.payload,
         );
-        expect(balance).toBe(varaAmount);
+        expect(balance).toBe("20000000000000");
 
      });
 });

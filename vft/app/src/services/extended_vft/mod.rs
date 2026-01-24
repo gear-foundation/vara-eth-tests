@@ -1,12 +1,9 @@
 #![allow(static_mut_refs)]
 use sails_rs::{
-    collections::HashSet,
-    gstd::{msg, service},
-    prelude::*,
+    collections::HashSet, gstd::{msg, service}, prelude::*
 };
 mod funcs;
 use crate::services;
-use core::str::FromStr;
 use vft_service::{Service as VftService, Storage};
 
 #[derive(Default)]
@@ -32,7 +29,7 @@ pub struct ExtendedService {
 }
 
 impl ExtendedService {
-    pub fn new() -> Self {
+    pub fn create() -> Self {
         Self {
             vft: VftService::new(),
         }
@@ -78,80 +75,72 @@ impl From<ExtendedService> for VftService {
 impl ExtendedService {
 
     #[export]
-    pub fn mint(&mut self, to: String, value: String) -> bool {
-        sails_rs::gstd::debug!("MINT MSG SOURCE {:?}", msg::source());
-        // if !self.get().minters.contains(&msg::source()) {
-        //     panic!("Not allowed to mint")
-        // };
+    pub fn mint(&mut self, to: ActorId, value: String) -> bool {
+        if !self.get().minters.contains(&msg::source()) {
+            panic!("Not allowed to mint")
+        };
 
-        let to_id = parse_actor(&to);
         let value_u256 = parse_u256(&value);
         let mutated = services::utils::panicking(|| {
-            funcs::mint(Storage::balances(), Storage::total_supply(), to_id, value_u256)
+            funcs::mint(Storage::balances(), Storage::total_supply(), to, value_u256)
         });
         if mutated {
-            self.emit_event(Event::Minted { to, value })
+            self.emit_event(Event::Minted { to: to.to_string(), value })
                 .expect("Notification Error");
         }
         mutated
     }
 
     #[export]
-    pub fn burn(&mut self, from: String, value: String) -> bool {
+    pub fn burn(&mut self, from: ActorId, value: String) -> bool {
         if !self.get().burners.contains(&msg::source()) {
             panic!("Not allowed to burn")
         };
-        let from_id = parse_actor(&from);
         let value_u256 = parse_u256(&value);
         let mutated = services::utils::panicking(|| {
-            funcs::burn(Storage::balances(), Storage::total_supply(), from_id, value_u256)
+            funcs::burn(Storage::balances(), Storage::total_supply(), from, value_u256)
         });
         if mutated {
-            self.emit_event(Event::Burned { from, value })
+            self.emit_event(Event::Burned { from: from.to_string(), value })
                 .expect("Notification Error");
         }
         mutated
     }
 
-     #[export]
-    pub fn grant_admin_role_test(&mut self) {
-        self.get_mut().admins.insert(msg::source());
+    #[export]
+    pub fn grant_admin_role(&mut self, to: ActorId) {
+        self.ensure_is_admin();
+        self.get_mut().admins.insert(to);
     }
 
     #[export]
-    pub fn grant_admin_role(&mut self, to: String) {
+    pub fn grant_minter_role(&mut self, to: ActorId) {
         self.ensure_is_admin();
-        self.get_mut().admins.insert(parse_actor(&to));
+        self.get_mut().minters.insert(to);
     }
 
     #[export]
-    pub fn grant_minter_role(&mut self, to: String) {
+    pub fn grant_burner_role(&mut self, to: ActorId) {
         self.ensure_is_admin();
-        self.get_mut().minters.insert(parse_actor(&to));
+        self.get_mut().burners.insert(to);
     }
 
     #[export]
-    pub fn grant_burner_role(&mut self, to: String) {
+    pub fn revoke_admin_role(&mut self, from: ActorId) {
         self.ensure_is_admin();
-        self.get_mut().burners.insert(parse_actor(&to));
+        self.get_mut().admins.remove(&from);
     }
 
     #[export]
-    pub fn revoke_admin_role(&mut self, from: String) {
+    pub fn revoke_minter_role(&mut self, from: ActorId) {
         self.ensure_is_admin();
-        self.get_mut().admins.remove(&parse_actor(&from));
+        self.get_mut().minters.remove(&from);
     }
 
     #[export]
-    pub fn revoke_minter_role(&mut self, from: String) {
+    pub fn revoke_burner_role(&mut self, from: ActorId) {
         self.ensure_is_admin();
-        self.get_mut().minters.remove(&parse_actor(&from));
-    }
-
-    #[export]
-    pub fn revoke_burner_role(&mut self, from: String) {
-        self.ensure_is_admin();
-        self.get_mut().burners.remove(&parse_actor(&from));
+        self.get_mut().burners.remove(&from);
     }
 
     #[export]
@@ -176,10 +165,6 @@ impl ExtendedService {
             panic!("Not admin")
         };
     }
-}
-
-fn parse_actor(id: &str) -> ActorId {
-    ActorId::from_str(id).expect("Unable to decode to ActorId")
 }
 
 fn parse_u256(amount: &str) -> U256 {

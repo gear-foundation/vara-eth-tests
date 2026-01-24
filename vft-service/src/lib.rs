@@ -89,17 +89,16 @@ impl Service {
 #[service(events = Event)]
 impl Service {
     #[export]
-    pub fn approve(&mut self, spender: String, value: String) -> bool {
+    pub fn approve(&mut self, spender: ActorId, value: String) -> bool {
         let owner = msg::source();
         let storage = Storage::get_mut();
-        let spender_id = parse_actor(&spender);
         let value_u256 = parse_u256(&value);
-        let mutated = funcs::approve(&mut storage.allowances, owner, spender_id, value_u256);
+        let mutated = funcs::approve(&mut storage.allowances, owner, spender, value_u256);
 
         if mutated {
             self.emit_event(Event::Approval {
                 owner: owner.to_string(),
-                spender,
+                spender: spender.to_string(),
                 value,
             })
             .expect("Notification Error");
@@ -109,18 +108,17 @@ impl Service {
     }
 
     #[export]
-    pub fn transfer(&mut self, to: String, value: String) -> bool {
+    pub fn transfer(&mut self, to: ActorId, value: String) -> bool {
         let from = msg::source();
         let storage = Storage::get_mut();
-        let to_id = parse_actor(&to);
         let value_u256 = parse_u256(&value);
         let mutated =
-            utils::panicking(move || funcs::transfer(&mut storage.balances, from, to_id, value_u256));
+            utils::panicking(move || funcs::transfer(&mut storage.balances, from, to, value_u256));
 
         if mutated {
             self.emit_event(Event::Transfer {
                 from: from.to_string(),
-                to,
+                to: to.to_string(),
                 value,
             })
             .expect("Notification Error");
@@ -130,25 +128,23 @@ impl Service {
     }
 
     #[export]
-    pub fn transfer_from(&mut self, from: String, to: String, value: String) -> bool {
+    pub fn transfer_from(&mut self, from: ActorId, to: ActorId, value: String) -> bool {
         let spender = msg::source();
         let storage = Storage::get_mut();
-        let from_id = parse_actor(&from);
-        let to_id = parse_actor(&to);
         let value_u256 = parse_u256(&value);
         let mutated = utils::panicking(move || {
             funcs::transfer_from(
                 &mut storage.allowances,
                 &mut storage.balances,
                 spender,
-                from_id,
-                to_id,
+                from,
+                to,
                 value_u256,
             )
         });
 
         if mutated {
-            self.emit_event(Event::Transfer { from, to, value })
+            self.emit_event(Event::Transfer { from: from.to_string(), to: to.to_string(), value })
                 .expect("Notification Error");
         }
 
@@ -156,17 +152,14 @@ impl Service {
     }
 
     #[export]
-    pub fn allowance(&self, owner: String, spender: String) -> String {
+    pub fn allowance(&self, owner: ActorId, spender: ActorId) -> String {
         let storage = Storage::get();
-        let owner = parse_actor(&owner);
-        let spender = parse_actor(&spender);
         funcs::allowance(&storage.allowances, owner, spender).to_string()
     }
 
     #[export]
-    pub fn balance_of(&self, account: String) -> String {
+    pub fn balance_of(&self, account: ActorId) -> String {
         let storage = Storage::get();
-        let account = parse_actor(&account);
         funcs::balance_of(&storage.balances, account).to_string()
     }
 
@@ -193,10 +186,6 @@ impl Service {
         let storage = Storage::get();
         storage.total_supply.to_string()
     }
-}
-
-fn parse_actor(id: &str) -> ActorId {
-    ActorId::from_str(id).expect("Unable to decode to ActorId")
 }
 
 fn parse_u256(amount: &str) -> U256 {

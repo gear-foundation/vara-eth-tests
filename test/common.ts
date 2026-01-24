@@ -31,8 +31,7 @@ export async function init() {
     walletClient,
     CONFIG.eth.router,
   );
-
-  console.log(CONFIG.varaEth.rpc)
+  await ethereumClient.isInitialized;
   const provider = new WsVaraEthProvider(CONFIG.varaEth.rpc);
   varaEthApi = new VaraEthApi(provider, ethereumClient);
 

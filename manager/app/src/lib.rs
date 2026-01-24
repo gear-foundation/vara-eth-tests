@@ -4,9 +4,9 @@ use rust_decimal::Decimal;
 use sails_rs::{
     collections::HashMap,
     gstd::{exec, msg},
-    prelude::*,
+    prelude::*, cell::RefCell,
 };
-static mut STATE: Option<ManagerState> = None;
+
 #[derive(Default)]
 struct ManagerState {
     checkers: Vec<ActorId>,
@@ -52,30 +52,27 @@ impl FixedPoint {
         Self { num, scale }
     }
 }
-struct ManagerService(());
-
-impl ManagerService {
-    pub fn init() -> Self {
-        sails_rs::gstd::debug!("GAS {:?}", sails_rs::gstd::exec::gas_available());
-        unsafe { STATE = Some(ManagerState::new()) }
-        Self(())
-    }
-    pub fn get_mut(&mut self) -> &'static mut ManagerState {
-        unsafe { STATE.as_mut().expect("STATE is not initialized") }
-    }
-    pub fn get(&self) -> &'static ManagerState {
-        unsafe { STATE.as_ref().expect("STATE is not initialized") }
-    }
+pub struct ManagerService<'a> {
+    state: &'a RefCell<ManagerState>,
 }
 
-impl ManagerService {
-    pub fn new() -> Self {
-        Self(())
+impl <'a> ManagerService <'a> {
+    fn create(state: &'a RefCell<ManagerState>) -> Self {
+        Self { state }
+    }
+    #[inline]
+    fn get_mut(&self) -> sails_rs::cell::RefMut<'_, ManagerState> {
+        self.state.borrow_mut()
+    }
+
+    #[inline]
+    fn get(&self) -> sails_rs::cell::Ref<'_, ManagerState> {
+        self.state.borrow()
     }
 }
 
 #[sails_rs::service]
-impl ManagerService {
+impl <'a> ManagerService <'a> {
     #[export]
     pub async fn add_checkers(&mut self, checkers: Vec<[u16; 32]>) {
         let checkers_bytes: Vec<[u8; 32]> = checkers
@@ -189,23 +186,25 @@ impl ManagerService {
     #[export]
     pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32, rounds_left: u32) {
         if rounds_left == 0 {
-            sails_rs::gstd::debug!("RETURN");
             return;
         }
-        let checkers = &self.get().checkers;
-        let points = &self.get().point_results;
+       
+       let (checkers, points_len) = {
+        let state = self.get();
 
-        if checkers.is_empty() || points.is_empty() {
+        if state.checkers.is_empty() || state.point_results.is_empty() {
             return;
         }
+
+        (state.checkers.clone(), state.point_results.len() as u32)
+    };
         for checker in checkers.iter() {
-            if self.get().points_sent >= points.len() as u32 {
+            if self.get().points_sent >= points_len {
                 break;
             }
             self.send_next_batch(*checker, max_iter, batch_size);
         }
-        sails_rs::gstd::debug!("ROUNDS LEFT {:?}", rounds_left);
-        sails_rs::gstd::debug!("GAS {:?}", sails_rs::gstd::exec::gas_available());
+
         if rounds_left > 1 && self.get().points_sent < self.get().point_results.len() as u32 {
             let payload = [
                 "Manager".encode(),
@@ -311,17 +310,19 @@ impl ManagerService {
     }
 }
 
-pub struct ManagerProgram(());
-
+pub struct ManagerProgram {
+    state: RefCell<ManagerState>,
+}
 #[sails_rs::program]
 impl ManagerProgram {
-    pub fn new() -> Self {
-        ManagerService::init();
-        Self(())
+    pub fn init() -> Self {
+         Self {
+            state: RefCell::new(ManagerState::new()),
+        }
     }
 
     // Exposed service
-    pub fn manager(&self) -> ManagerService {
-        ManagerService::new()
+    pub fn manager(&self) -> ManagerService<'_> {
+        ManagerService::create(&self.state)
     }
 }
