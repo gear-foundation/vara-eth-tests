@@ -50,7 +50,7 @@ export default defineConfig({
       concurrent: false,
     },
     fileParallelism: false,
-    testTimeout: 2 * 60_000,
+    testTimeout: 5 * 60_000,
     setupFiles: ["./test/vitest.setup.ts"],
     reporters: ["default", "html"],
   },

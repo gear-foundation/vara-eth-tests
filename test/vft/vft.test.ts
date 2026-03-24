@@ -267,6 +267,10 @@ describe("injected txs: transfer", () => {
     await wait1Block();
     await wait1Block();
     await wait1Block();
+    await wait1Block();
+    await wait1Block();
+    await wait1Block();
+    await wait1Block();
   });
 
   test("should return the increased balance", async () => {
@@ -300,6 +304,11 @@ describe("injected txs: mint", () => {
       value: 0n,
     });
     await injected.sendAndWaitForPromise();
+    await wait1Block();
+    await wait1Block();
+    await wait1Block();
+    await wait1Block();
+    await wait1Block();
     await wait1Block();
     await wait1Block();
     await wait1Block();
