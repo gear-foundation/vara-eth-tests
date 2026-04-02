@@ -22,6 +22,25 @@ const WASM_PATH = "./target/wasm32-gear/release/extended_vft.opt.wasm";
 const idlContent = readFileSync(IDL_PATH, "utf-8");
 const codeBytes = new Uint8Array(readFileSync(WASM_PATH));
 
+async function waitForStateHashChange(
+  mirror: MirrorClient,
+  prevStateHash: Hex,
+  maxBlocks = 30,
+): Promise<Hex> {
+  for (let i = 0; i < maxBlocks; i++) {
+    await wait1Block();
+
+    const nextStateHash = await mirror.stateHash();
+    if (nextStateHash !== prevStateHash) {
+      return nextStateHash;
+    }
+  }
+
+  throw new Error(
+    `State hash did not change within ${maxBlocks} blocks. Previous state hash: ${prevStateHash}`,
+  );
+}
+
 describe("create token", () => {
   const envCodeId = process.env.TOKEN_ID as Hex;
   const TOP_UP_AMOUNT = BigInt(100 * 1e12);
@@ -91,6 +110,7 @@ describe("create token", () => {
 
     expect(receipt.status).toBe("success");
 
+    console.log("stateHash", stateHash)
     while (!newStateHash) {
       await wait1Block();
     }
@@ -98,6 +118,7 @@ describe("create token", () => {
     unwatch();
 
     stateHash = newStateHash;
+    console.log("stateHash", stateHash)
   });
 
   test("should check that executable balance is equal to TOP_UP_AMOUNT", async () => {
@@ -179,14 +200,15 @@ describe("metadata", () => {
 
 describe("send messages: mint", () => {
   let mirror: MirrorClient;
-  const varaAddress =
-    "0x0000000000000000000000000b0fb0f232080876d8ad03b84ea01bd4aad45a4b";
   const varaAmount = "10000000000000";
 
   test("should mint tokens", async () => {
     mirror = getMirrorClient(vftId, walletClient, publicClient);
+    const varaAddress = ethereumClient.accountAddress;
+    const paddedVaraAddress = `0x${varaAddress.slice(2).padStart(64, "0")}`;
+
     const payload = sails.services.Vft.functions.Mint.encodePayload(
-      varaAddress,
+      paddedVaraAddress,
       varaAmount,
     );
 
@@ -221,8 +243,11 @@ describe("send messages: mint", () => {
   });
 
   test("should return the increased balance", async () => {
+    const varaAddress = ethereumClient.accountAddress;
+    const paddedVaraAddress = `0x${varaAddress.slice(2).padStart(64, "0")}`;
+
     const queryPayload =
-      sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
+      sails.services.Vft.queries.BalanceOf.encodePayload(paddedVaraAddress);
 
     const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
       ethereumClient.accountAddress,
@@ -248,35 +273,31 @@ describe("send messages: mint", () => {
 });
 
 describe("injected txs: transfer", () => {
+  let mirror: MirrorClient;
   const varaAddress =
     "0xae665500b487d538c34dee6c68ba737f1add21ed275fcca75523342639abc536";
   const varaAmount = "10000000000000";
+
   test("should transfer tokens", async () => {
+    mirror = getMirrorClient(vftId, walletClient, publicClient);
     const payload = sails.services.Vft.functions.Transfer.encodePayload(
       varaAddress,
       varaAmount,
     );
+    const prevStateHash = stateHash ?? (await mirror.stateHash());
     const injected = await varaEthApi.createInjectedTransaction({
       destination: vftId,
       payload, // Encoded message payload
       value: 0n,
     });
     await injected.sendAndWaitForPromise();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
+    stateHash = await waitForStateHashChange(mirror, prevStateHash);
   });
 
   test("should return the increased balance", async () => {
     const queryPayload =
       sails.services.Vft.queries.BalanceOf.encodePayload(varaAddress);
-
+  
     const queryReply = await varaEthApi.call.program.calculateReplyForHandle(
       ethereumClient.accountAddress,
       vftId,
@@ -290,30 +311,25 @@ describe("injected txs: transfer", () => {
 });
 
 describe("injected txs: mint", () => {
+  let mirror: MirrorClient;
   const varaAddress =
     "0xae665500b487d538c34dee6c68ba737f1add21ed275fcca75523342639abc536";
   const varaAmount = "10000000000000";
   test("should mint tokens", async () => {
+    mirror = getMirrorClient(vftId, walletClient, publicClient);
     const payload = sails.services.Vft.functions.Mint.encodePayload(
       varaAddress,
       varaAmount,
     );
+
     const injected = await varaEthApi.createInjectedTransaction({
       destination: vftId,
       payload,
       value: 0n,
     });
+    const prevStateHash = stateHash ?? (await mirror.stateHash());
     await injected.sendAndWaitForPromise();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
-    await wait1Block();
+    stateHash = await waitForStateHashChange(mirror, prevStateHash);
   });
 
   test("should return the increased balance", async () => {
