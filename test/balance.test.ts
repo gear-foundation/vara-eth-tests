@@ -12,6 +12,7 @@ describe("check balances", () => {
   });
 
   test("check WVARA balance", async () => {
+    console.log(ethereumClient)
     const balance = await ethereumClient.wvara.balanceOf(
       ethereumClient.accountAddress,
     );

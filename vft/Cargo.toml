@@ -18,7 +18,6 @@ extended-vft-client = { path = "client" }
 sails-rs = { workspace = true, features = ["gtest"] }
 tokio.workspace = true
 gclient.workspace = true
-gear-core.workspace = true
 
 [features]
 wasm-binary = []

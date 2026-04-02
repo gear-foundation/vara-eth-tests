@@ -8,12 +8,12 @@ pub struct ExtendedVftProgram(());
 
 #[program]
 impl ExtendedVftProgram {
-    pub fn new(name: String, symbol: String, decimals: u16) -> Self {
+    pub fn init(name: String, symbol: String, decimals: u16) -> Self {
         ExtendedService::init(name, symbol, decimals);
         Self(())
     }
 
     pub fn vft(&self) -> ExtendedService {
-        ExtendedService::new()
+        ExtendedService::create()
     }
 }

@@ -18,7 +18,7 @@ pub struct FixedPoint {
 }
 
 impl MandelbrotCheckerService {
-    pub fn new() -> Self {
+    pub fn create() -> Self {
         Self(())
     }
 }
@@ -60,7 +60,7 @@ impl MandelbrotCheckerProgram {
     }
 
     pub fn mandelbrot_checker(&self) -> MandelbrotCheckerService {
-        MandelbrotCheckerService::new()
+        MandelbrotCheckerService::create()
     }
 }
 

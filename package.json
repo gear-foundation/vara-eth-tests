@@ -6,13 +6,14 @@
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "clean": "rm -r node_modules pnpm-lock.yaml"
+    "clean": "rm -r node_modules pnpm-lock.yaml",
+    "injected": "ts-node --esm script/injected.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vara-eth/api": "^0.0.4",
+    "@vara-eth/api": "^0.1.1",
     "dotenv": "^17.2.3",
     "kzg-wasm": "^1.0.0",
     "sails-js": "^0.5.1",

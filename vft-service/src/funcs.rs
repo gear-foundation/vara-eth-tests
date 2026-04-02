@@ -39,7 +39,6 @@ pub fn transfer(
     to: ActorId,
     value: U256,
 ) -> Result<bool> {
-    sails_rs::gstd::debug!("TRANFER MSG SOURCE {:?}", sails_rs::gstd::msg::source());
     if from == to || value.is_zero() {
         return Ok(false);
     }
