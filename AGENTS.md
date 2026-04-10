@@ -143,6 +143,6 @@ This rule applies to:
 
 ## Local Debugging Procedure
 
-For running a fully local `ethexe` node, switching `.env` to local endpoints, and fetching the local router address, use the repo skill:
+For running a fully local `ethexe` node, switching `.env` to local endpoints, and fetching the local router address, use the repo skill `local-vara-eth-node`:
 
-- [`skills/local-vara-eth-node/SKILL.md`](/Users/luisa/vara-eth-tests/skills/local-vara-eth-node/SKILL.md)
+- [`local-vara-eth-node`](skills/local-vara-eth-node/SKILL.md)
