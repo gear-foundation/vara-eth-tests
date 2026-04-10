@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-[workspace]
-
 [dependencies]
 alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
 anyhow = "1"
@@ -22,6 +20,9 @@ parity-scale-codec = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[lints]
+workspace = true
 
 [patch.crates-io]
 alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
