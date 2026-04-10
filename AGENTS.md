@@ -146,3 +146,40 @@ This rule applies to:
 For running a fully local `ethexe` node, switching `.env` to local endpoints, and fetching the local router address, use the repo skill `local-vara-eth-node`:
 
 - [`local-vara-eth-node`](skills/local-vara-eth-node/SKILL.md)
+
+## Test Launchers
+
+Prefer the repo launchers over ad-hoc manual setup when running the full local or testnet test flow.
+
+### Local
+
+Use:
+- `./script/run-tests.sh local rust`
+- `./script/run-tests.sh local ts`
+
+Behavior:
+- switches `.env` to local RPC endpoints
+- builds local wasm artifacts
+- uploads local code ids and syncs them into `.env`
+- then runs the selected Rust or TypeScript test suite
+
+### Testnet
+
+Use:
+- `TESTNET_PRIVATE_KEY=0x... TESTNET_SENDER=0x... ./script/run-tests.sh testnet rust`
+- `TESTNET_PRIVATE_KEY=0x... TESTNET_SENDER=0x... ./script/run-tests.sh testnet ts`
+
+Rules:
+- testnet runs require an explicit private key
+- if `TESTNET_SENDER` is omitted, the launcher may derive it automatically when `cast` is available
+- `script/use-testnet-env.sh` should update only RPC/router and optional key/sender values
+- `script/use-testnet-env.sh` must not overwrite `TOKEN_ID`, `CHECKER_CODE_ID`, or `MANAGER_CODE_ID`
+
+### Code Id Sync
+
+Use `./script/upload-code-ids.sh` as the canonical way to upload local wasm code and refresh:
+- `TOKEN_ID`
+- `CHECKER_CODE_ID`
+- `MANAGER_CODE_ID`
+
+in the root `.env`.
