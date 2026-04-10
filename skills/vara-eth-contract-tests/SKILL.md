@@ -33,6 +33,10 @@ Before writing code, open only the files that matter:
 7. [`references/vara-eth-api-patterns.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/vara-eth-api-patterns.md) when the request is about raw API behavior, signatures, promises, router views, or non-Sails payload testing
 8. [`references/common-test-checklist.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/common-test-checklist.md) to decide which baseline checks should already exist and should be reused instead of rewritten
 9. [`references/reply-testing.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/reply-testing.md) when the suite needs reply-code assertions, promise checks, or negative-case validation
+10. [`references/environment-matrix.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/environment-matrix.md) when deciding between local and testnet execution
+11. [`references/code-id-and-env-rules.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/code-id-and-env-rules.md) when the task involves `.env`, upload scripts, or switching networks
+12. [`references/query-vs-message.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/query-vs-message.md) when deciding whether a test should use query or real message flow
+13. [`references/debug-playbook.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/debug-playbook.md) when diagnosing reply failures, query failures, balance issues, or node-level traps
 
 If the user names a contract, inspect its IDL and derive the suite from the actual constructors, services, functions, and queries instead of guessing.
 
@@ -127,3 +131,7 @@ For reusable code shapes and example snippets, read:
 - [`references/vara-eth-api-patterns.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/vara-eth-api-patterns.md) for raw API, router, mirror, query, injected tx, and signature coverage
 - [`references/common-test-checklist.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/common-test-checklist.md) for reusable baseline checks that should usually exist only once
 - [`references/reply-testing.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/reply-testing.md) for reply-code semantics, auto vs manual success, and negative-case test design
+- [`references/environment-matrix.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/environment-matrix.md) for deciding whether a scenario belongs on local or testnet
+- [`references/code-id-and-env-rules.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/code-id-and-env-rules.md) for `.env`, code id, and launcher rules
+- [`references/query-vs-message.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/query-vs-message.md) for execution-based query semantics versus real message flow
+- [`references/debug-playbook.md`](/Users/luisa/vara-eth-tests/skills/vara-eth-contract-tests/references/debug-playbook.md) for common failure signatures and the next debugging step
