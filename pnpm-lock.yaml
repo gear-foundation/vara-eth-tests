@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@vara-eth/api':
-        specifier: ^0.1.1
-        version: 0.1.1(kzg-wasm@1.0.0)(viem@2.41.2(typescript@5.9.3))
+        specifier: ^0.3.2
+        version: 0.3.2(@vara-eth/viem@2.47.7-1(typescript@5.9.3))(kzg-wasm@1.0.0)
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -24,8 +24,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.1
       viem:
-        specifier: ^2.40.2
-        version: 2.41.2(typescript@5.9.3)
+        specifier: npm:@vara-eth/viem@2.47.7-1
+        version: '@vara-eth/viem@2.47.7-1(typescript@5.9.3)'
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -370,15 +370,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@ethereumjs/rlp@10.1.0':
-    resolution: {integrity: sha512-r67BJbwilammAqYI4B5okA66cNdTlFzeWxPNJOolKV52ZS/flo0tUBf4x4gxWXBgh48OgsdFV1Qp5pRoSe8IhQ==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  '@ethereumjs/util@10.1.0':
-    resolution: {integrity: sha512-GGTCkRu1kWXbz2JoUnIYtJBOoA9T5akzsYa91Bh+DZQ3Cj4qXj3hkNU0Rx6wZlbcmkmhQfrjZfVt52eJO/y2nA==}
-    engines: {node: '>=18'}
-
   '@gear-js/api@0.44.2':
     resolution: {integrity: sha512-367E+S5pfgxrTj+QY21qLGu+4CocKAUdbqXyYUVIPBJhkBXLBvcM9iGh6T0jXI2HC7hWncRFtne3DWvd6V6Rng==}
     peerDependencies:
@@ -398,10 +389,6 @@ packages:
 
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
-    engines: {node: ^14.21.3 || >=16}
-
-  '@noble/curves@1.9.0':
-    resolution: {integrity: sha512-7YDlXiNMdO1YZeH6t/kvopHHbIZzlxrCV9WLqCY6QhcXOoXiNCMDqJIglZ9Yjx5+w7Dz30TITFrlTjnRg7sKEg==}
     engines: {node: ^14.21.3 || >=16}
 
   '@noble/curves@1.9.1':
@@ -762,12 +749,20 @@ packages:
   '@types/whatwg-mimetype@3.0.2':
     resolution: {integrity: sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA==}
 
-  '@vara-eth/api@0.1.1':
-    resolution: {integrity: sha512-6qSymNHi4azSUpevs0Nvc+zlKmd9ljjJXYQA1RYnJAz+rrzyOCPtJMxRKnVvMX7yKdRTreBtDzTWxiBUeMQllw==}
+  '@vara-eth/api@0.3.2':
+    resolution: {integrity: sha512-NdxOChnVrsji49trNlsHbfqdDVLNIXfQEvbp2sZR/E38E9d+s894DrUBirSrbJP2oBVMC/35VEORAsHTxpn8oA==}
     engines: {node: '>=22'}
     peerDependencies:
       kzg-wasm: 1.0.0
-      viem: ^2.39.0
+      viem: '*'
+
+  '@vara-eth/viem@2.47.7-1':
+    resolution: {integrity: sha512-McElEWHr8zITpQt0qF5bfWgdN601VB47KgZDicvOtr+oHWJcTz2ZSlsuUlC5V9zba6AEDffoikJQM+M6fMyeXA==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@vitest/expect@4.0.15':
     resolution: {integrity: sha512-Gfyva9/GxPAWXIWjyGDli9O+waHDC0Q0jaLdFP1qPAUUfo1FEXPXUfUkp3eZA0sSq340vPycSyOlYUeM15Ft1w==}
@@ -803,8 +798,8 @@ packages:
   '@vitest/utils@4.0.15':
     resolution: {integrity: sha512-HXjPW2w5dxhTD0dLwtYHDnelK3j8sR8cWIaLxr22evTyY6q8pRCjZSmhRWVjBaOVXChQd6AwMzi9pucorXCPZA==}
 
-  abitype@1.1.0:
-    resolution: {integrity: sha512-6Vh4HcRxNMLA0puzPjM5GBgT4aAcFGKZzSgAXvuZ27shJP6NEpielTuqbBmZILR5/xd0PizkBGy5hReKz9jl5A==}
+  abitype@1.2.3:
+    resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
     peerDependencies:
       typescript: '>=5.0.4'
       zod: ^3.22.0 || ^4.0.0
@@ -876,10 +871,6 @@ packages:
 
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
-
-  ethereum-cryptography@3.2.0:
-    resolution: {integrity: sha512-Urr5YVsalH+Jo0sYkTkv1MyI9bLYZwW8BENZCeE1QYaTHETEYx0Nv/SVsWkSqpYrzweg6d8KMY1wTjH/1m/BIg==}
-    engines: {node: ^14.21.3 || >=16, npm: '>=9'}
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
@@ -972,8 +963,8 @@ packages:
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
-  ox@0.9.6:
-    resolution: {integrity: sha512-8SuCbHPvv2eZLYXrNmC0EC12rdzXQLdhnOMlHDW2wiCPLxBrOOJwX5L5E61by+UjTPOryqQiRSnjIKCI+GykKg==}
+  ox@0.14.7:
+    resolution: {integrity: sha512-zSQ/cfBdolj7U4++NAvH7sI+VG0T3pEohITCgcQj8KlawvTDY4vGVhDT64Atsm0d6adWfIYHDpu88iUBMMp+AQ==}
     peerDependencies:
       typescript: '>=5.4.0'
     peerDependenciesMeta:
@@ -1102,14 +1093,6 @@ packages:
 
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
-
-  viem@2.41.2:
-    resolution: {integrity: sha512-LYliajglBe1FU6+EH9mSWozp+gRA/QcHfxeD9Odf83AdH5fwUS7DroH4gHvlv6Sshqi1uXrYFA2B/EOczxd15g==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   vite@7.2.6:
     resolution: {integrity: sha512-tI2l/nFHC5rLh7+5+o7QjKjSR04ivXDF4jcgV0f/bTQ+OJiITy5S6gaynVsEM+7RqzufMnVbIon6Sr5x1SDYaQ==}
@@ -1378,13 +1361,6 @@ snapshots:
   '@esbuild/win32-x64@0.27.0':
     optional: true
 
-  '@ethereumjs/rlp@10.1.0': {}
-
-  '@ethereumjs/util@10.1.0':
-    dependencies:
-      '@ethereumjs/rlp': 10.1.0
-      ethereum-cryptography: 3.2.0
-
   '@gear-js/api@0.44.2(@polkadot/api@16.5.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@13.5.9)(@polkadot/x-randomvalues@13.5.9(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))))(rxjs@7.8.2)':
     dependencies:
       '@polkadot/api': 16.5.3
@@ -1401,10 +1377,6 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@noble/ciphers@1.3.0': {}
-
-  '@noble/curves@1.9.0':
-    dependencies:
-      '@noble/hashes': 1.8.0
 
   '@noble/curves@1.9.1':
     dependencies:
@@ -1803,7 +1775,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.1
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
@@ -1880,12 +1852,28 @@ snapshots:
 
   '@types/whatwg-mimetype@3.0.2': {}
 
-  '@vara-eth/api@0.1.1(kzg-wasm@1.0.0)(viem@2.41.2(typescript@5.9.3))':
+  '@vara-eth/api@0.3.2(@vara-eth/viem@2.47.7-1(typescript@5.9.3))(kzg-wasm@1.0.0)':
     dependencies:
-      '@ethereumjs/util': 10.1.0
       '@noble/hashes': 1.8.0
       kzg-wasm: 1.0.0
-      viem: 2.41.2(typescript@5.9.3)
+      viem: '@vara-eth/viem@2.47.7-1(typescript@5.9.3)'
+
+  '@vara-eth/viem@2.47.7-1(typescript@5.9.3)':
+    dependencies:
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)
+      isows: 1.0.7(ws@8.18.3)
+      ox: 0.14.7(typescript@5.9.3)
+      ws: 8.18.3
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
 
   '@vitest/expect@4.0.15':
     dependencies:
@@ -1937,7 +1925,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.15
       tinyrainbow: 3.0.3
 
-  abitype@1.1.0(typescript@5.9.3):
+  abitype@1.2.3(typescript@5.9.3):
     optionalDependencies:
       typescript: 5.9.3
 
@@ -2031,14 +2019,6 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
 
-  ethereum-cryptography@3.2.0:
-    dependencies:
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.0
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-
   eventemitter3@5.0.1: {}
 
   expect-type@1.2.2: {}
@@ -2113,7 +2093,7 @@ snapshots:
 
   obug@2.1.1: {}
 
-  ox@0.9.6(typescript@5.9.3):
+  ox@0.14.7(typescript@5.9.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -2121,7 +2101,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.9.3)
+      abitype: 1.2.3(typescript@5.9.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -2266,23 +2246,6 @@ snapshots:
   undici-types@7.16.0: {}
 
   v8-compile-cache-lib@3.0.1: {}
-
-  viem@2.41.2(typescript@5.9.3):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.9.3)
-      isows: 1.0.7(ws@8.18.3)
-      ox: 0.9.6(typescript@5.9.3)
-      ws: 8.18.3
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
 
   vite@7.2.6(@types/node@24.10.1)(tsx@4.21.0):
     dependencies:

@@ -1,10 +1,10 @@
 import { describe, test, expect } from "vitest";
-import { publicClient, ethereumClient } from "./common";
+import { publicClient, ethereumClient, accountAddress } from "./common";
 
 describe("check balances", () => {
   test("check ETH balance", async () => {
     const balance = await publicClient.getBalance({
-      address: ethereumClient.accountAddress,
+      address: accountAddress,
     });
 
     expect(balance).toBeGreaterThan(0);
@@ -14,7 +14,7 @@ describe("check balances", () => {
   test("check WVARA balance", async () => {
     console.log(ethereumClient)
     const balance = await ethereumClient.wvara.balanceOf(
-      ethereumClient.accountAddress,
+      accountAddress,
     );
 
     expect(balance).toBeGreaterThan(1000n * BigInt(1e12));

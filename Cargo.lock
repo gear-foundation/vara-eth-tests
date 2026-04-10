@@ -5908,9 +5908,9 @@ dependencies = [
 
 [[package]]
 name = "sails-client-gen"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e121b2e81ad1dec9521aa27089b614bcb8f4dd317520bd285dd9bdfb05215e85"
+checksum = "dddd93868445aa99aa3fe50342ada5ba1264f5fe7b6d5b43130f4f45c2ebf0b2"
 dependencies = [
  "anyhow",
  "convert_case 0.7.1",
@@ -5921,9 +5921,9 @@ dependencies = [
 
 [[package]]
 name = "sails-idl-gen"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9de852b37f589c633f17b029b95a85e41561f1b62bf356fac831ea2ffa5a6e58"
+checksum = "ea7b9ced73a79650df1d8c1bfa506f4e08cd77a4cef264258e5f0b04d910a835"
 dependencies = [
  "convert_case 0.7.1",
  "gprimitives",
@@ -5937,18 +5937,18 @@ dependencies = [
 
 [[package]]
 name = "sails-idl-meta"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56e9c6e30f1ce3cb84135befc460ace9101f52ac6d628e0dd9f6d1c85957e20d"
+checksum = "f4a22a7f17abed84627afdb89ef58a55e07ecf34e54665dab3157189b86f3a9c"
 dependencies = [
  "scale-info",
 ]
 
 [[package]]
 name = "sails-idl-parser"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e0628d0a56cfae55c8c5023c1b626198b25127d9a0a1773c90f1423e60b12bd"
+checksum = "b9c0dd7750fbc0e29c888a03c22d057c7ce046077d9a574e875c5aaa83aecb00"
 dependencies = [
  "lalrpop",
  "lalrpop-util",
@@ -5958,9 +5958,9 @@ dependencies = [
 
 [[package]]
 name = "sails-macros"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6008053a5af335a1ef4636b6691893fe89881e95de9571c15b28da77cb42f4ae"
+checksum = "9bdd89a1e06800a39c9ec894862579d9698080fcc259cbae0aa5a9f1c5ab532c"
 dependencies = [
  "proc-macro-error",
  "sails-macros-core",
@@ -5968,9 +5968,9 @@ dependencies = [
 
 [[package]]
 name = "sails-macros-core"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfd89276ac8699c84cc52f118252898fd5d3321365f32efc051d03d5ffb073be"
+checksum = "0108a50192e715db43ba94d3fcffaf0904c255e9f2b045950cec4325d2970b7e"
 dependencies = [
  "convert_case 0.7.1",
  "parity-scale-codec",
@@ -5982,9 +5982,9 @@ dependencies = [
 
 [[package]]
 name = "sails-rs"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "100f88d6a4688dd80243101914f665312f347f3ff2c4a97d47ec9403ce57f993"
+checksum = "9e3f3db39d829e94899ade845992761597ca504e87db9b7f57141886f0117077"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",

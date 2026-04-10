@@ -74,19 +74,8 @@ impl <'a> ManagerService <'a> {
 #[sails_rs::service]
 impl <'a> ManagerService <'a> {
     #[export]
-    pub async fn add_checkers(&mut self, checkers: Vec<[u16; 32]>) {
-        let checkers_bytes: Vec<[u8; 32]> = checkers
-            .into_iter()
-            .map(|arr_u16| {
-                let mut arr_u8 = [0u8; 32];
-                for (i, val) in arr_u16.into_iter().enumerate() {
-                    arr_u8[i] = u8::try_from(val).expect("value out of range for u8");
-                }
-                arr_u8
-            })
-            .collect();
-        let checkers: Vec<ActorId> = checkers_bytes.into_iter().map(ActorId::from).collect();
-        self.get_mut().checkers.extend(checkers);
+    pub async fn add_checker(&mut self, checker: ActorId) {
+        self.get_mut().checkers.push(checker);
     }
 
     #[export]
@@ -110,10 +99,11 @@ impl <'a> ManagerService <'a> {
         y_max_scale: u32,
         points_per_call: u32,
         continue_generation: bool,
-        check_points_after_generation: u32,
+        check_points_after_generation: bool,
         max_iter: u32,
         batch_size: u32,
     ) {
+        sails_rs::gstd::debug!("Starting point generation with width {}, height {}, points_per_call {}, max_iter {}, batch_size {}", width, height, points_per_call, max_iter, batch_size);
         let x_min_dec = Decimal::new(x_min_num, x_min_scale);
         let x_max_dec = Decimal::new(x_max_num, x_max_scale);
         let y_min_dec = Decimal::new(y_min_num, y_min_scale);
@@ -143,7 +133,9 @@ impl <'a> ManagerService <'a> {
                 .insert(i, (c_re, c_im, 0, false));
         }
 
-        if continue_generation && total_generated_points < total_points {
+        let generated_points_now = self.get().point_results.len() as u32;
+
+        if continue_generation && generated_points_now < total_points {
             let payload = [
                 "Manager".encode(),
                 "GenerateAndStorePoints".encode(),
@@ -170,13 +162,14 @@ impl <'a> ManagerService <'a> {
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
         }
 
-        if check_points_after_generation > 0
-            && self.get_mut().point_results.len() as u32 >= total_points
-        {
+        sails_rs::gstd::debug!("Generated and stored points from index {} to {}. Total generated points: {}.", starting_index, generated_points_now, generated_points_now);
+        sails_rs::gstd::debug!("Continue generation: {}. Check points after generation: {}.", continue_generation, check_points_after_generation);
+        if check_points_after_generation && generated_points_now >= total_points {
+            sails_rs::gstd::debug!("All points generated. Starting to check points with max_iter {} and batch_size {}.", max_iter, batch_size);
             let payload = [
                 "Manager".encode(),
                 "CheckPointsSet".encode(),
-                (max_iter, batch_size, check_points_after_generation).encode(),
+                (max_iter, batch_size, true).encode(),
             ]
             .concat();
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
@@ -184,20 +177,17 @@ impl <'a> ManagerService <'a> {
     }
 
     #[export]
-    pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32, rounds_left: u32) {
-        if rounds_left == 0 {
-            return;
-        }
-       
-       let (checkers, points_len) = {
-        let state = self.get();
+    pub fn check_points_set(&mut self, max_iter: u32, batch_size: u32, continue_checking: bool) {
+        sails_rs::gstd::debug!("Starting to check points batch with max_iter {} and batch_size {}", max_iter, batch_size);
+        let (checkers, points_len) = {
+            let state = self.get();
 
-        if state.checkers.is_empty() || state.point_results.is_empty() {
-            return;
-        }
+            if state.checkers.is_empty() || state.point_results.is_empty() {
+                return;
+            }
 
-        (state.checkers.clone(), state.point_results.len() as u32)
-    };
+            (state.checkers.clone(), state.point_results.len() as u32)
+        };
         for checker in checkers.iter() {
             if self.get().points_sent >= points_len {
                 break;
@@ -205,11 +195,13 @@ impl <'a> ManagerService <'a> {
             self.send_next_batch(*checker, max_iter, batch_size);
         }
 
-        if rounds_left > 1 && self.get().points_sent < self.get().point_results.len() as u32 {
+        sails_rs::gstd::debug!("Checked points batch sent to checkers. Sent {} out of {} points.", self.get().points_sent, points_len);
+        if continue_checking && self.get().points_sent < self.get().point_results.len() as u32 {
+            sails_rs::gstd::debug!("Scheduling next batch of points to check after current batch is processed");
             let payload = [
                 "Manager".encode(),
                 "CheckPointsSet".encode(),
-                (max_iter, batch_size, rounds_left - 1).encode(),
+                (max_iter, batch_size, true).encode(),
             ]
             .concat();
             msg::send_bytes(exec::program_id(), payload, 0).expect("Error during msg sending");
@@ -217,6 +209,7 @@ impl <'a> ManagerService <'a> {
     }
 
     pub fn send_next_batch(&mut self, checker: ActorId, max_iter: u32, batch_size: u32) {
+        sails_rs::gstd::debug!("Preparing next batch of points to send to checker");
         let mut points_to_send = Vec::new();
 
         let start = self.get().points_sent as u32;
@@ -245,7 +238,7 @@ impl <'a> ManagerService <'a> {
             (points_u16, max_iter).encode(),
         ]
         .concat();
-
+        sails_rs::gstd::debug!("Sending batch of points to checker {}: indexes {} to {}", checker, start, end);
         msg::send_bytes(checker, payload, 0).expect("Failed to send points to checker");
     }
 
@@ -264,7 +257,10 @@ impl <'a> ManagerService <'a> {
 
     #[export]
     pub fn get_points_len(&self) -> u32 {
-        self.get().point_results.len() as u32
+        sails_rs::gstd::debug!("Gas before {:?}", exec::gas_available());
+        let len = self.get().point_results.len() as u32;
+        sails_rs::gstd::debug!("Gas after {:?}", exec::gas_available());
+        len
     }
 
     #[export]

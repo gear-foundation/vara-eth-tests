@@ -53,14 +53,15 @@ impl ExtendedService {
         unsafe {
             EXTENDED_STORAGE
                 .as_mut()
-                .expect("Extended vft is not initialized")
+                .expect("Vft is not initialized")
         }
     }
+
     pub fn get(&self) -> &'static ExtendedStorage {
         unsafe {
             EXTENDED_STORAGE
                 .as_ref()
-                .expect("Extended vft is not initialized")
+                .expect("Vft is not initialized")
         }
     }
 }
