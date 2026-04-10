@@ -19,3 +19,6 @@ env_logger = "*"
 tokio = { version = "1.41", features = ["rt", "macros"] }
 scale-info = { version = "2", default-features = false }
 parity-scale-codec = { version = "3", default-features = false }
+
+[patch.crates-io]
+alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
