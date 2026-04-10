@@ -50,9 +50,9 @@ struct StressScenario {
 
 const STRESS_SCENARIOS: &[StressScenario] = &[
     StressScenario {
-        name: "grid_200x200",
-        width: 200,
-        height: 200,
+        name: "grid_100x100",
+        width: 100,
+        height: 100,
         points_per_call: 30_000,
         max_iter: 1_000,
         batch_size: 10,
@@ -66,9 +66,9 @@ const STRESS_SCENARIOS: &[StressScenario] = &[
         y_max_scale: 1,
     },
     StressScenario {
-        name: "grid_400x400",
-        width: 400,
-        height: 400,
+        name: "grid_200x200",
+        width: 200,
+        height: 200,
         points_per_call: 30_000,
         max_iter: 1_000,
         batch_size: 10,

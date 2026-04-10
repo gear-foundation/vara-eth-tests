@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
+alloy = "1.8"
 anyhow = "1"
 ethexe-common = { git = "https://github.com/gear-tech/gear", package = "ethexe-common" }
 ethexe-ethereum = { git = "https://github.com/gear-tech/gear", package = "ethexe-ethereum" }
@@ -20,9 +20,3 @@ parity-scale-codec = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-
-[lints]
-workspace = true
-
-[patch.crates-io]
-alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
