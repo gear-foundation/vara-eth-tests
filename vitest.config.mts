@@ -6,10 +6,11 @@ class CustomSequencer implements TestSequencer {
   sort(files) {
     const order = [
       "setup.test.ts",
-      "vft.test.ts",
       "balance.test.ts",
+      "vft.test.ts",
+      "vft.load.test.ts",
       "checkers.test.ts",
-      "manager.test.ts",
+      "mandelbrot-checker-load.test.ts",
     ];
 
     return [...files].sort((a, b) => {
@@ -40,10 +41,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.test.ts"],
-    exclude: [
-      "test/mandelbrot/checkers.test.ts",
-      "test/mandelbrot/manager.test.ts",
-    ],
     globals: true,
     sequence: {
       sequencer: CustomSequencer,

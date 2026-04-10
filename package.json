@@ -13,12 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vara-eth/api": "^0.1.1",
+    "@vara-eth/api": "^0.3.2",
     "dotenv": "^17.2.3",
     "kzg-wasm": "^1.0.0",
     "sails-js": "^0.5.1",
     "sails-js-parser": "^0.5.1",
-    "viem": "^2.40.2"
+    "viem": "npm:@vara-eth/viem@2.47.7-1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -1,4 +1,10 @@
-import { EthereumClient, VaraEthApi, WsVaraEthProvider } from "@vara-eth/api";
+import {
+  createVaraEthApi,
+  EthereumClient,
+  type VaraEthApi,
+  WsVaraEthProvider,
+} from "@vara-eth/api";
+import { walletClientToSigner } from "@vara-eth/api/signer";
 import {
   Chain,
   createPublicClient,
@@ -17,6 +23,7 @@ export let publicClient: PublicClient<WebSocketTransport, Chain>;
 export let walletClient: WalletClient<WebSocketTransport, Chain, Account>;
 export let varaEthApi: VaraEthApi;
 export let ethereumClient: EthereumClient;
+export let accountAddress: `0x${string}`;
 export let sails: Sails;
 
 export async function init() {
@@ -25,15 +32,15 @@ export async function init() {
 
   publicClient = createPublicClient({ transport });
   walletClient = createWalletClient({ transport, account });
-
-  ethereumClient = new EthereumClient(
-    publicClient,
-    walletClient,
-    CONFIG.eth.router,
-  );
-  await ethereumClient.isInitialized;
   const provider = new WsVaraEthProvider(CONFIG.varaEth.rpc);
-  varaEthApi = new VaraEthApi(provider, ethereumClient);
+  varaEthApi = await createVaraEthApi(
+    provider,
+    publicClient,
+    CONFIG.eth.router,
+    walletClientToSigner(walletClient),
+  );
+  ethereumClient = varaEthApi.eth;
+  accountAddress = await ethereumClient.signer.getAddress();
 
   const parser = await SailsIdlParser.new();
   sails = new Sails(parser);

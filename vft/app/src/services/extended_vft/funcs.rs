@@ -42,7 +42,6 @@ pub fn burn(
     let new_from = funcs::balance_of(balances, from)
         .checked_sub(value)
         .ok_or(Error::InsufficientBalance)?;
-
     if !new_from.is_zero() {
         balances.insert(from, new_from);
     } else {
