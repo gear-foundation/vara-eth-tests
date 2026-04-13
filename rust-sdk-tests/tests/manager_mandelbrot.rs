@@ -22,14 +22,15 @@ use gprimitives::{ActorId, CodeId, H256};
 const CHECKER_WASM_PATH: &str = "../target/wasm32-gear/release/mandelbrot_checker.opt.wasm";
 const MANAGER_WASM_PATH: &str = "../target/wasm32-gear/release/manager.opt.wasm";
 const CHECKER_COUNT: usize = 3;
-const CHECKER_TOP_UP_AMOUNT: u128 = 2000 * 1_000_000_000_000;
-const MANAGER_TOP_UP_AMOUNT: u128 = 15000 * 1_000_000_000_000;
+const CHECKER_TOP_UP_AMOUNT: u128 = 1000 * 1_000_000_000_000;
+const MANAGER_TOP_UP_AMOUNT: u128 = 2000 * 1_000_000_000_000;
 const VARA_DECIMALS: u128 = 1_000_000_000_000;
 const RAW_TX_GAS_PRICE_BUMP_NUMERATOR: u128 = 6;
 const RAW_TX_GAS_PRICE_BUMP_DENOMINATOR: u128 = 5;
 const APPROVE_SUBMIT_TIMEOUT: Duration = Duration::from_secs(45);
 const APPROVE_SUBMIT_MAX_ATTEMPTS: usize = 3;
 const CODE_VALIDATION_TIMEOUT: Duration = Duration::from_secs(180);
+const MANAGER_QUERY_MAX_ATTEMPTS: usize = 5;
 
 struct StressScenario {
     name: &'static str,
@@ -55,7 +56,7 @@ const STRESS_SCENARIOS: &[StressScenario] = &[
         height: 100,
         points_per_call: 30_000,
         max_iter: 1_000,
-        batch_size: 10,
+        batch_size: 5,
         x_min_num: -2,
         x_min_scale: 0,
         x_max_num: 1,
@@ -94,6 +95,12 @@ struct TestContext {
     api: VaraEthApi,
     checker_ids: Vec<ActorId>,
     manager_id: ActorId,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct CheckerCounters {
+    result_batches_sent: u32,
+    result_points_sent: u32,
 }
 
 fn predeployed_checker_ids() -> Result<Vec<ActorId>> {
@@ -199,6 +206,17 @@ async fn calculate_manager_reply_once(
         .calculate_reply_for_handle(payload, 0)
         .await
         .with_context(|| "failed to calculate manager reply")
+}
+
+async fn calculate_checker_reply_once(
+    api: &VaraEthApi,
+    checker_id: ActorId,
+    payload: Vec<u8>,
+) -> Result<gear_core::rpc::ReplyInfo> {
+    api.mirror(checker_id)
+        .calculate_reply_for_handle(payload, 0)
+        .await
+        .with_context(|| "failed to calculate checker reply")
 }
 
 async fn executable_balance(api: &VaraEthApi, program_id: ActorId) -> Result<u128> {
@@ -339,41 +357,100 @@ async fn query_manager<T: Decode>(
     action: &str,
     payload: Vec<u8>,
 ) -> Result<T> {
-    let reply = match calculate_manager_reply_once(api, manager_id, payload.clone()).await {
-        Ok(reply) => reply,
-        Err(error) => {
-            let error = error.context(format!(
-                "failed to calculate manager reply for action {action}"
-            ));
-            if !is_restart_required_error(&error) {
-                return Err(error);
+    let mut last_restart_error = None;
+
+    for attempt in 1..=MANAGER_QUERY_MAX_ATTEMPTS {
+        let reply = if attempt == 1 {
+            match calculate_manager_reply_once(api, manager_id, payload.clone()).await {
+                Ok(reply) => reply,
+                Err(error) => {
+                    let error = error.context(format!(
+                        "failed to calculate manager reply for action {action}"
+                    ));
+                    if !is_restart_required_error(&error) {
+                        return Err(error);
+                    }
+
+                    info!(
+                        action,
+                        attempt,
+                        max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                        error = %error,
+                        "Vara.Eth API connection dropped during manager query; reconnecting"
+                    );
+
+                    last_restart_error = Some(error);
+                    let fresh_api = connect_fresh_api().await?;
+                    match calculate_manager_reply_once(&fresh_api, manager_id, payload.clone()).await
+                    {
+                        Ok(reply) => reply,
+                        Err(error) => {
+                            let error = error.context(format!(
+                                "failed to calculate manager reply for action {action} after reconnect"
+                            ));
+                            if !is_restart_required_error(&error) {
+                                return Err(error);
+                            }
+
+                            info!(
+                                action,
+                                attempt,
+                                max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                                error = %error,
+                                "Fresh Vara.Eth API connection also failed during manager query"
+                            );
+
+                            last_restart_error = Some(error);
+                            sleep(POLL_DELAY).await;
+                            continue;
+                        }
+                    }
+                }
             }
-
-            info!(
-                action,
-                error = %error,
-                "Vara.Eth API connection dropped during manager query; reconnecting"
-            );
-
+        } else {
             let fresh_api = connect_fresh_api().await?;
-            calculate_manager_reply_once(&fresh_api, manager_id, payload)
-                .await
-                .with_context(|| {
-                    format!("failed to calculate manager reply for action {action} after reconnect")
-                })?
-        }
-    };
+            match calculate_manager_reply_once(&fresh_api, manager_id, payload.clone()).await {
+                Ok(reply) => reply,
+                Err(error) => {
+                    let error = error.context(format!(
+                        "failed to calculate manager reply for action {action} after reconnect"
+                    ));
+                    if !is_restart_required_error(&error) {
+                        return Err(error);
+                    }
 
-    assert_manual_success(&reply.code.to_bytes(), action);
+                    info!(
+                        action,
+                        attempt,
+                        max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                        error = %error,
+                        "Fresh Vara.Eth API connection also failed during manager query"
+                    );
 
-    let (service, returned_action, value) =
-        <(String, String, T)>::decode(&mut reply.payload.as_ref())
-            .with_context(|| format!("failed to decode manager reply envelope for {action}"))?;
+                    last_restart_error = Some(error);
+                    sleep(POLL_DELAY).await;
+                    continue;
+                }
+            }
+        };
 
-    assert_eq!(service, "Manager");
-    assert_eq!(returned_action, action);
+        assert_manual_success(&reply.code.to_bytes(), action);
 
-    Ok(value)
+        let (service, returned_action, value) =
+            <(String, String, T)>::decode(&mut reply.payload.as_ref())
+                .with_context(|| format!("failed to decode manager reply envelope for {action}"))?;
+
+        assert_eq!(service, "Manager");
+        assert_eq!(returned_action, action);
+
+        return Ok(value);
+    }
+
+    Err(last_restart_error.unwrap_or_else(|| {
+        anyhow!(
+            "failed to calculate manager reply for action {action} after {MANAGER_QUERY_MAX_ATTEMPTS} attempts"
+        )
+    }))
 }
 
 async fn manager_points_sent(api: &VaraEthApi, manager_id: ActorId) -> Result<u32> {
@@ -395,6 +472,156 @@ async fn manager_checkers(api: &VaraEthApi, manager_id: ActorId) -> Result<Vec<A
         query_manager(api, manager_id, "GetCheckers", manager_payload("GetCheckers", ())).await?;
     Vec::<ActorId>::decode(&mut encoded.as_slice())
         .with_context(|| "failed to decode manager checker list")
+}
+
+async fn query_checker<T: Decode>(
+    api: &VaraEthApi,
+    checker_id: ActorId,
+    action: &str,
+    payload: Vec<u8>,
+) -> Result<T> {
+    let mut last_restart_error = None;
+
+    for attempt in 1..=MANAGER_QUERY_MAX_ATTEMPTS {
+        let reply = if attempt == 1 {
+            match calculate_checker_reply_once(api, checker_id, payload.clone()).await {
+                Ok(reply) => reply,
+                Err(error) => {
+                    let error = error.context(format!(
+                        "failed to calculate checker reply for action {action}"
+                    ));
+                    if !is_restart_required_error(&error) {
+                        return Err(error);
+                    }
+
+                    info!(
+                        action,
+                        attempt,
+                        max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                        error = %error,
+                        "Vara.Eth API connection dropped during checker query; reconnecting"
+                    );
+
+                    last_restart_error = Some(error);
+                    let fresh_api = connect_fresh_api().await?;
+                    match calculate_checker_reply_once(&fresh_api, checker_id, payload.clone()).await
+                    {
+                        Ok(reply) => reply,
+                        Err(error) => {
+                            let error = error.context(format!(
+                                "failed to calculate checker reply for action {action} after reconnect"
+                            ));
+                            if !is_restart_required_error(&error) {
+                                return Err(error);
+                            }
+
+                            info!(
+                                action,
+                                attempt,
+                                max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                                error = %error,
+                                "Fresh Vara.Eth API connection also failed during checker query"
+                            );
+
+                            last_restart_error = Some(error);
+                            sleep(POLL_DELAY).await;
+                            continue;
+                        }
+                    }
+                }
+            }
+        } else {
+            let fresh_api = connect_fresh_api().await?;
+            match calculate_checker_reply_once(&fresh_api, checker_id, payload.clone()).await {
+                Ok(reply) => reply,
+                Err(error) => {
+                    let error = error.context(format!(
+                        "failed to calculate checker reply for action {action} after reconnect"
+                    ));
+                    if !is_restart_required_error(&error) {
+                        return Err(error);
+                    }
+
+                    info!(
+                        action,
+                        attempt,
+                        max_attempts = MANAGER_QUERY_MAX_ATTEMPTS,
+                        error = %error,
+                        "Fresh Vara.Eth API connection also failed during checker query"
+                    );
+
+                    last_restart_error = Some(error);
+                    sleep(POLL_DELAY).await;
+                    continue;
+                }
+            }
+        };
+
+        assert_manual_success(&reply.code.to_bytes(), action);
+
+        let (service, returned_action, value) =
+            <(String, String, T)>::decode(&mut reply.payload.as_ref())
+                .with_context(|| format!("failed to decode checker reply envelope for {action}"))?;
+
+        assert_eq!(service, "MandelbrotChecker");
+        assert_eq!(returned_action, action);
+
+        return Ok(value);
+    }
+
+    Err(last_restart_error.unwrap_or_else(|| {
+        anyhow!(
+            "failed to calculate checker reply for action {action} after {MANAGER_QUERY_MAX_ATTEMPTS} attempts"
+        )
+    }))
+}
+
+fn checker_query_payload<T: Encode>(action: &str, args: T) -> Vec<u8> {
+    [
+        "MandelbrotChecker".to_string().encode(),
+        action.to_string().encode(),
+        args.encode(),
+    ]
+    .concat()
+}
+
+async fn checker_result_batches_sent(api: &VaraEthApi, checker_id: ActorId) -> Result<u32> {
+    query_checker(
+        api,
+        checker_id,
+        "GetResultBatchesSent",
+        checker_query_payload("GetResultBatchesSent", ()),
+    )
+    .await
+}
+
+async fn checker_result_points_sent(api: &VaraEthApi, checker_id: ActorId) -> Result<u32> {
+    query_checker(
+        api,
+        checker_id,
+        "GetResultPointsSent",
+        checker_query_payload("GetResultPointsSent", ()),
+    )
+    .await
+}
+
+async fn checker_counters(api: &VaraEthApi, checker_id: ActorId) -> Result<CheckerCounters> {
+    Ok(CheckerCounters {
+        result_batches_sent: checker_result_batches_sent(api, checker_id).await?,
+        result_points_sent: checker_result_points_sent(api, checker_id).await?,
+    })
+}
+
+fn format_checker_counters(counters: Option<CheckerCounters>) -> String {
+    counters
+        .map(|counters| {
+            format!(
+                "sent_batches={} sent_points={}",
+                counters.result_batches_sent,
+                counters.result_points_sent
+            )
+        })
+        .unwrap_or_else(|| "unavailable".to_string())
 }
 
 async fn wait_for_programs_on_vara_eth(api: &VaraEthApi, program_ids: &[ActorId]) -> Result<()> {
@@ -986,27 +1213,74 @@ async fn wait_for_completion(
     expected_points: u32,
 ) -> Result<()> {
     for _ in 0..MAX_POLL_ATTEMPTS * 10 {
-        let points_sent = manager_points_sent(api, manager_id).await?;
-        let checked_count = manager_checked_count(api, manager_id).await?;
-        let manager_executable_balance = executable_balance(api, manager_id).await?;
-        let checker_executable_balances = futures_util::future::try_join_all(
+        let (points_sent, checked_count) = match (
+            manager_points_sent(api, manager_id).await,
+            manager_checked_count(api, manager_id).await,
+        ) {
+            (Ok(points_sent), Ok(checked_count)) => (points_sent, checked_count),
+            (Err(error), _) | (_, Err(error)) => {
+                info!(
+                    %manager_id,
+                    error = %error,
+                    "Manager progress query is temporarily unavailable; continuing polling"
+                );
+                sleep(POLL_DELAY).await;
+                continue;
+            }
+        };
+
+        let manager_executable_balance = match executable_balance(api, manager_id).await {
+            Ok(balance) => Some(balance),
+            Err(error) => {
+                info!(
+                    %manager_id,
+                    error = %error,
+                    "Manager executable balance query is temporarily unavailable"
+                );
+                None
+            }
+        };
+
+        let checker_executable_balances = futures_util::future::join_all(
             checker_ids
                 .iter()
                 .copied()
-                .map(|checker_id| async move {
-                    executable_balance(api, checker_id).await
-                }),
+                .map(|checker_id| async move { executable_balance(api, checker_id).await.ok() }),
         )
-        .await?;
+        .await;
+        let checker_progress = futures_util::future::join_all(
+            checker_ids
+                .iter()
+                .copied()
+                .map(|checker_id| async move { checker_counters(api, checker_id).await.ok() }),
+        )
+        .await;
 
         info!(
             expected_points,
             points_sent,
             checked_count,
-            manager_executable_balance_vara = %format_vara(manager_executable_balance),
-            checker_0_executable_balance_vara = %format_vara(checker_executable_balances[0]),
-            checker_1_executable_balance_vara = %format_vara(checker_executable_balances[1]),
-            checker_2_executable_balance_vara = %format_vara(checker_executable_balances[2]),
+            manager_executable_balance_vara = manager_executable_balance
+                .map(|balance| format_vara(balance))
+                .unwrap_or_else(|| "unavailable".to_string()),
+            checker_0_executable_balance_vara = checker_executable_balances
+                .first()
+                .and_then(|balance| *balance)
+                .map(|balance| format_vara(balance))
+                .unwrap_or_else(|| "unavailable".to_string()),
+            checker_1_executable_balance_vara = checker_executable_balances
+                .get(1)
+                .and_then(|balance| *balance)
+                .map(|balance| format_vara(balance))
+                .unwrap_or_else(|| "unavailable".to_string()),
+            checker_2_executable_balance_vara = checker_executable_balances
+                .get(2)
+                .and_then(|balance| *balance)
+                .map(|balance| format_vara(balance))
+                .unwrap_or_else(|| "unavailable".to_string()),
+            checker_0_progress = %format_checker_counters(checker_progress.first().copied().flatten()),
+            checker_1_progress = %format_checker_counters(checker_progress.get(1).copied().flatten()),
+            checker_2_progress = %format_checker_counters(checker_progress.get(2).copied().flatten()),
             "Manager stress progress"
         );
 
