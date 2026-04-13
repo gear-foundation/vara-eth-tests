@@ -14,8 +14,8 @@ LOCAL_PRIVATE_KEY="${LOCAL_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb4
 LOCAL_SENDER="${LOCAL_SENDER:-0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266}"
 
 if [ ! -f "$ENV_FILE" ]; then
-  echo "Missing env file: $ENV_FILE" >&2
-  exit 1
+  touch "$ENV_FILE"
+  echo "Created env file: $ENV_FILE"
 fi
 
 update_env_value() {

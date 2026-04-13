@@ -6,28 +6,27 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
 ENV_FILE="${ENV_FILE:-$REPO_ROOT/.env}"
-TEMPLATE_FILE="${TEMPLATE_FILE:-$REPO_ROOT/.env.example}"
-
-if [ ! -f "$ENV_FILE" ]; then
-  echo "Missing env file: $ENV_FILE" >&2
-  exit 1
-fi
-
-if [ ! -f "$TEMPLATE_FILE" ]; then
-  echo "Missing template file: $TEMPLATE_FILE" >&2
-  exit 1
-fi
-
-set -a
-. "$TEMPLATE_FILE"
-set +a
-
-: "${ETHEREUM_RPC:?ETHEREUM_RPC is required in $TEMPLATE_FILE}"
-: "${VARA_ETH_RPC:?VARA_ETH_RPC is required in $TEMPLATE_FILE}"
-: "${ROUTER_ADDRESS:?ROUTER_ADDRESS is required in $TEMPLATE_FILE}"
+TESTNET_ETHEREUM_RPC="${TESTNET_ETHEREUM_RPC:-wss://hoodi-reth-rpc.gear-tech.io/ws}"
+TESTNET_VARA_ETH_RPC="${TESTNET_VARA_ETH_RPC:-wss://vara-eth-validator-1.gear-tech.io}"
+TESTNET_ROUTER_ADDRESS="${TESTNET_ROUTER_ADDRESS:-0xE549b0AfEdA978271FF7E712232B9F7f39A0b060}"
 
 TESTNET_PRIVATE_KEY="${TESTNET_PRIVATE_KEY:-}"
 TESTNET_SENDER="${TESTNET_SENDER:-}"
+
+if [ -z "$TESTNET_PRIVATE_KEY" ]; then
+  echo "TESTNET_PRIVATE_KEY is required" >&2
+  exit 1
+fi
+
+if [ -z "$TESTNET_SENDER" ]; then
+  echo "TESTNET_SENDER is required" >&2
+  exit 1
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+  touch "$ENV_FILE"
+  echo "Created env file: $ENV_FILE"
+fi
 
 update_env_value() {
   env_key="$1"
@@ -53,23 +52,13 @@ update_env_value() {
   echo "Updated $env_key -> $env_value"
 }
 
-echo "Switching $ENV_FILE to testnet values from $TEMPLATE_FILE"
+echo "Switching $ENV_FILE to hardcoded testnet values"
 
-update_env_value "ETHEREUM_RPC" "$ETHEREUM_RPC"
-update_env_value "VARA_ETH_RPC" "$VARA_ETH_RPC"
-update_env_value "ROUTER_ADDRESS" "$ROUTER_ADDRESS"
-
-if [ -n "$TESTNET_PRIVATE_KEY" ]; then
-  update_env_value "PRIVATE_KEY" "$TESTNET_PRIVATE_KEY"
-else
-  echo "PRIVATE_KEY was not updated. Pass TESTNET_PRIVATE_KEY=... if needed."
-fi
-
-if [ -n "$TESTNET_SENDER" ]; then
-  update_env_value "SENDER" "$TESTNET_SENDER"
-else
-  echo "SENDER was not updated. Pass TESTNET_SENDER=... if needed."
-fi
+update_env_value "ETHEREUM_RPC" "$TESTNET_ETHEREUM_RPC"
+update_env_value "VARA_ETH_RPC" "$TESTNET_VARA_ETH_RPC"
+update_env_value "ROUTER_ADDRESS" "$TESTNET_ROUTER_ADDRESS"
+update_env_value "PRIVATE_KEY" "$TESTNET_PRIVATE_KEY"
+update_env_value "SENDER" "$TESTNET_SENDER"
 
 echo
 echo "Done. .env now points to testnet RPC endpoints."

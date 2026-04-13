@@ -1,8 +1,17 @@
 #![no_std]
 
 use core::ops::{Add, Mul, Sub};
-use sails_rs::{gstd::msg, prelude::*};
-struct MandelbrotCheckerService(());
+use sails_rs::{cell::RefCell, gstd::msg, prelude::*};
+
+#[derive(Default)]
+struct CheckerState {
+    result_batches_sent: u32,
+    result_points_sent: u32,
+}
+
+pub struct MandelbrotCheckerService<'a> {
+    state: &'a RefCell<CheckerState>,
+}
 
 #[derive(Encode, Decode, TypeInfo, Clone)]
 pub struct Point {
@@ -17,14 +26,24 @@ pub struct FixedPoint {
     pub scale: u32,
 }
 
-impl MandelbrotCheckerService {
-    pub fn create() -> Self {
-        Self(())
+impl<'a> MandelbrotCheckerService<'a> {
+    pub fn create(state: &'a RefCell<CheckerState>) -> Self {
+        Self { state }
+    }
+
+    #[inline]
+    fn get_mut(&self) -> sails_rs::cell::RefMut<'_, CheckerState> {
+        self.state.borrow_mut()
+    }
+
+    #[inline]
+    fn get(&self) -> sails_rs::cell::Ref<'_, CheckerState> {
+        self.state.borrow()
     }
 }
 
 #[sails_rs::service]
-impl MandelbrotCheckerService {
+impl<'a> MandelbrotCheckerService<'a> {
     #[export]
     pub fn check_mandelbrot_points(&mut self, points: Vec<u16>, max_iter: u32) {
         let point_bytes: Vec<u8> = points
@@ -48,19 +67,35 @@ impl MandelbrotCheckerService {
         ]
         .concat();
         msg::send_bytes(msg::source(), payload, 0).expect("Error: msg sending");
+        self.get_mut().result_batches_sent += 1;
+        self.get_mut().result_points_sent += results.len() as u32;
+    }
+
+    #[export]
+    pub fn get_result_batches_sent(&self) -> u32 {
+        self.get().result_batches_sent
+    }
+
+    #[export]
+    pub fn get_result_points_sent(&self) -> u32 {
+        self.get().result_points_sent
     }
 }
 
-pub struct MandelbrotCheckerProgram(());
+pub struct MandelbrotCheckerProgram {
+    state: RefCell<CheckerState>,
+}
 
 #[sails_rs::program]
 impl MandelbrotCheckerProgram {
     pub fn init() -> Self {
-        Self(())
+        Self {
+            state: RefCell::new(CheckerState::default()),
+        }
     }
 
-    pub fn mandelbrot_checker(&self) -> MandelbrotCheckerService {
-        MandelbrotCheckerService::create()
+    pub fn mandelbrot_checker(&self) -> MandelbrotCheckerService<'_> {
+        MandelbrotCheckerService::create(&self.state)
     }
 }
 
