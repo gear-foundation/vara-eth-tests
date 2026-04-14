@@ -79,9 +79,9 @@ jobs:
           fi
           curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode text="Daily Testnet TS: ${STATUS}
-          Repo: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Run: ${RUN_URL}
+            --data-urlencode text="Daily Testnet TS
+Status: ${STATUS}
+Branch: ${{ github.ref_name }}
+Run: ${RUN_URL}
 
-          ${SUMMARY}"
+${SUMMARY}"
