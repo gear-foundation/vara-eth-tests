@@ -834,9 +834,7 @@ async fn vft_mirror_parallel_burst_on_testnet() -> Result<()> {
     let config = TestConfig::load()?;
     let ethereum = config.connect_ethereum().await?;
     let provider = ethereum.provider();
-    let sender_address = ethereum
-        .sender_address()
-        .ok_or_else(|| anyhow!("no sender address available for parallel burst"))?;
+    let sender_address = ethereum.sender_address();
     let base_account_nonce = provider.get_transaction_count(sender_address.into()).pending().await?;
     let mirror_address = ctx.program_id.to_address_lossy().to_fixed_bytes();
     let payload = vft_payload("Transfer", (recipient, MIRROR_BURST_TRANSFER_AMOUNT.to_string()));

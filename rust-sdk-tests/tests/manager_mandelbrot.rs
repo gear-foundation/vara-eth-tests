@@ -682,9 +682,7 @@ async fn top_up_and_init_checker_programs(
     checker_ids: &[ActorId],
 ) -> Result<()> {
     let provider = ethereum.provider();
-    let sender_address = ethereum
-        .sender_address()
-        .ok_or_else(|| anyhow!("no sender address available for checker setup"))?;
+    let sender_address = ethereum.sender_address();
     let base_account_nonce = provider.get_transaction_count(sender_address.into()).pending().await?;
     let (latest_nonce, pending_nonce) = sender_nonces(&provider, sender_address.into()).await?;
     let gas_price = bumped_gas_price(&provider).await?;
@@ -989,9 +987,7 @@ async fn deploy_and_prepare_checkers(
     log_step("Deploy Checkers");
     ensure_checker_code_validated(&raw_api, checker_code_id).await?;
     let provider = raw_ethereum.provider();
-    let sender_address = raw_ethereum
-        .sender_address()
-        .ok_or_else(|| anyhow!("no sender address available for checker deployment"))?;
+    let sender_address = raw_ethereum.sender_address();
     let base_account_nonce = provider.get_transaction_count(sender_address.into()).pending().await?;
     let gas_price = bumped_gas_price(&provider).await?;
     let router_address = config.router_address()?;

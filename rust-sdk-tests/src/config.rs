@@ -1,7 +1,5 @@
 use anyhow::{Context, Result, anyhow};
-use ethexe_ethereum::{
-    Ethereum, INCREASED_BLOB_GAS_MULTIPLIER, NO_EIP1559_FEE_INCREASE_PERCENTAGE,
-};
+use ethexe_ethereum::{Ethereum, EthereumBuilder};
 use ethexe_sdk::VaraEthApi;
 use gprimitives::ActorId;
 use gsigner::secp256k1::{Address, PrivateKey, Signer};
@@ -69,16 +67,16 @@ impl TestConfig {
 
     pub async fn connect_ethereum(&self) -> Result<Ethereum> {
         let (signer, sender_address) = self.signer_and_address()?;
-        Ethereum::new(
-            &self.ethereum_rpc,
-            self.router_address()?,
-            signer,
-            sender_address,
-            NO_EIP1559_FEE_INCREASE_PERCENTAGE,
-            INCREASED_BLOB_GAS_MULTIPLIER,
-        )
-        .await
-        .with_context(|| "failed to connect Ethereum client")
+        EthereumBuilder::default()
+            .rpc_url(&self.ethereum_rpc)
+            .router_address(self.router_address()?)
+            .signer(signer)
+            .sender_address(sender_address)
+            .eip1559_fee_increase_percentage(Ethereum::NO_EIP1559_FEE_INCREASE_PERCENTAGE)
+            .blob_gas_multiplier(Ethereum::INCREASED_BLOB_GAS_MULTIPLIER)
+            .build()
+            .await
+            .with_context(|| "failed to connect Ethereum client")
     }
 
     pub async fn connect_api(&self) -> Result<VaraEthApi> {
