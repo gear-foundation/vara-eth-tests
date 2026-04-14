@@ -45,3 +45,18 @@ jobs:
         with:
           name: daily-testnet-ts-log
           path: daily-testnet-ts.log
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STATUS: ${{ job.status }}
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode text="Daily Testnet TS: ${STATUS}
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Run: ${RUN_URL}"
