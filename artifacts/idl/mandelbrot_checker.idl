@@ -1,0 +1,9 @@
+constructor {
+  Init : ();
+};
+
+service MandelbrotChecker {
+  CheckMandelbrotPoints : (points: vec u16, max_iter: u32) -> null;
+  query GetResultBatchesSent : () -> u32;
+  query GetResultPointsSent : () -> u32;
+};

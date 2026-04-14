@@ -1,0 +1,47 @@
+constructor {
+  Init : (name: str, symbol: str, decimals: u16);
+};
+
+service Vft {
+  Burn : (from: actor_id, value: str) -> bool;
+  GrantAdminRole : (to: actor_id) -> null;
+  GrantBurnerRole : (to: actor_id) -> null;
+  GrantMinterRole : (to: actor_id) -> null;
+  Mint : (to: actor_id, value: str) -> bool;
+  RevokeAdminRole : (from: actor_id) -> null;
+  RevokeBurnerRole : (from: actor_id) -> null;
+  RevokeMinterRole : (from: actor_id) -> null;
+  Approve : (spender: actor_id, value: str) -> bool;
+  Transfer : (to: actor_id, value: str) -> bool;
+  TransferFrom : (from: actor_id, to: actor_id, value: str) -> bool;
+  query Admins : () -> vec str;
+  query Burners : () -> vec str;
+  query Minters : () -> vec str;
+  query Allowance : (owner: actor_id, spender: actor_id) -> str;
+  query BalanceOf : (account: actor_id) -> str;
+  query Decimals : () -> u16;
+  query Name : () -> str;
+  query Symbol : () -> str;
+  query TotalSupply : () -> str;
+
+  events {
+    Minted: struct {
+      to: str,
+      value: str,
+    };
+    Burned: struct {
+      from: str,
+      value: str,
+    };
+    Approval: struct {
+      owner: str,
+      spender: str,
+      value: str,
+    };
+    Transfer: struct {
+      from: str,
+      to: str,
+      value: str,
+    };
+  }
+};

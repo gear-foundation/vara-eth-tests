@@ -1,7 +1,5 @@
 use anyhow::{Context, Result, anyhow};
-use ethexe_ethereum::{
-    Ethereum, INCREASED_BLOB_GAS_MULTIPLIER, NO_EIP1559_FEE_INCREASE_PERCENTAGE,
-};
+use ethexe_ethereum::{Ethereum, EthereumBuilder};
 use ethexe_sdk::VaraEthApi;
 use gprimitives::ActorId;
 use gsigner::secp256k1::{Address, PrivateKey, Signer};
@@ -13,9 +11,9 @@ pub struct TestConfig {
     pub vara_eth_rpc: String,
     pub router_address: String,
     pub private_key: String,
-    pub checker_code_id: String,
-    pub manager_code_id: String,
-    pub token_id: String,
+    pub checker_code_id: Option<String>,
+    pub manager_code_id: Option<String>,
+    pub token_id: Option<String>,
 }
 
 impl TestConfig {
@@ -27,27 +25,36 @@ impl TestConfig {
             vara_eth_rpc: get_var("VARA_ETH_RPC", &env_file)?,
             router_address: get_var("ROUTER_ADDRESS", &env_file)?,
             private_key: get_var("PRIVATE_KEY", &env_file)?,
-            checker_code_id: get_var("CHECKER_CODE_ID", &env_file)?,
-            manager_code_id: get_var("MANAGER_CODE_ID", &env_file)?,
-            token_id: get_var("TOKEN_ID", &env_file)?,
+            checker_code_id: get_optional_var("CHECKER_CODE_ID", &env_file),
+            manager_code_id: get_optional_var("MANAGER_CODE_ID", &env_file),
+            token_id: get_optional_var("TOKEN_ID", &env_file),
         })
     }
 
     pub fn checker_code_id(&self) -> Result<gprimitives::CodeId> {
-        gprimitives::CodeId::from_str(&self.checker_code_id).with_context(|| {
-            format!("failed to parse CHECKER_CODE_ID: {}", self.checker_code_id)
-        })
+        let checker_code_id = self
+            .checker_code_id
+            .as_deref()
+            .ok_or_else(|| anyhow!("missing required config value: CHECKER_CODE_ID"))?;
+        gprimitives::CodeId::from_str(checker_code_id)
+            .with_context(|| format!("failed to parse CHECKER_CODE_ID: {checker_code_id}"))
     }
 
     pub fn manager_code_id(&self) -> Result<gprimitives::CodeId> {
-        gprimitives::CodeId::from_str(&self.manager_code_id).with_context(|| {
-            format!("failed to parse MANAGER_CODE_ID: {}", self.manager_code_id)
-        })
+        let manager_code_id = self
+            .manager_code_id
+            .as_deref()
+            .ok_or_else(|| anyhow!("missing required config value: MANAGER_CODE_ID"))?;
+        gprimitives::CodeId::from_str(manager_code_id)
+            .with_context(|| format!("failed to parse MANAGER_CODE_ID: {manager_code_id}"))
     }
 
     pub fn token_actor_id(&self) -> Result<ActorId> {
-        ActorId::from_str(&self.token_id)
-            .with_context(|| format!("failed to parse TOKEN_ID: {}", self.token_id))
+        let token_id = self
+            .token_id
+            .as_deref()
+            .ok_or_else(|| anyhow!("missing required config value: TOKEN_ID"))?;
+        ActorId::from_str(token_id).with_context(|| format!("failed to parse TOKEN_ID: {token_id}"))
     }
 
     pub fn router_address(&self) -> Result<Address> {
@@ -69,16 +76,16 @@ impl TestConfig {
 
     pub async fn connect_ethereum(&self) -> Result<Ethereum> {
         let (signer, sender_address) = self.signer_and_address()?;
-        Ethereum::new(
-            &self.ethereum_rpc,
-            self.router_address()?,
-            signer,
-            sender_address,
-            NO_EIP1559_FEE_INCREASE_PERCENTAGE,
-            INCREASED_BLOB_GAS_MULTIPLIER,
-        )
-        .await
-        .with_context(|| "failed to connect Ethereum client")
+        EthereumBuilder::default()
+            .rpc_url(&self.ethereum_rpc)
+            .router_address(self.router_address()?)
+            .signer(signer)
+            .sender_address(sender_address)
+            .eip1559_fee_increase_percentage(Ethereum::NO_EIP1559_FEE_INCREASE_PERCENTAGE)
+            .blob_gas_multiplier(Ethereum::INCREASED_BLOB_GAS_MULTIPLIER)
+            .build()
+            .await
+            .with_context(|| "failed to connect Ethereum client")
     }
 
     pub async fn connect_api(&self) -> Result<VaraEthApi> {
@@ -91,11 +98,15 @@ impl TestConfig {
 }
 
 fn get_var(key: &str, env_file: &HashMap<String, String>) -> Result<String> {
+    get_optional_var(key, env_file)
+        .ok_or_else(|| anyhow!("missing required config value: {key}"))
+}
+
+fn get_optional_var(key: &str, env_file: &HashMap<String, String>) -> Option<String> {
     env::var(key)
         .ok()
         .or_else(|| env_file.get(key).cloned())
         .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| anyhow!("missing required config value: {key}"))
 }
 
 fn load_env_file(path: impl AsRef<Path>) -> Result<HashMap<String, String>> {

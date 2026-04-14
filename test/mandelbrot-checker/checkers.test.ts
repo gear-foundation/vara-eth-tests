@@ -16,7 +16,7 @@ import {
   expectAutoSuccessReply,
 } from "../helpers/replies";
 
-const IDL_PATH = "./target/wasm32-gear/release/mandelbrot_checker.idl";
+const IDL_PATH = "./artifacts/idl/mandelbrot_checker.idl";
 const idlContent = readFileSync(IDL_PATH, "utf-8");
 
 const TOP_UP_AMOUNT = BigInt(100 * 1e12);

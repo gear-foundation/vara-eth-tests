@@ -7,13 +7,13 @@ publish = false
 [dependencies]
 alloy = "1.8"
 anyhow = "1"
-ethexe-common = { git = "https://github.com/gear-tech/gear", package = "ethexe-common" }
-ethexe-ethereum = { git = "https://github.com/gear-tech/gear", package = "ethexe-ethereum" }
-ethexe-sdk = { git = "https://github.com/gear-tech/gear", package = "ethexe-sdk" }
+ethexe-common = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "ethexe-common" }
+ethexe-ethereum = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "ethexe-ethereum" }
+ethexe-sdk = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "ethexe-sdk" }
 futures-util = "0.3"
-gear-core = { git = "https://github.com/gear-tech/gear", package = "gear-core" }
-gprimitives = { git = "https://github.com/gear-tech/gear", package = "gprimitives", features = ["std", "ethexe", "codec"] }
-gsigner = { git = "https://github.com/gear-tech/gear", package = "gsigner" }
+gear-core = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "gear-core" }
+gprimitives = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "gprimitives", features = ["std", "ethexe", "codec"] }
+gsigner = { git = "https://github.com/gear-tech/gear", rev = "de3032de", package = "gsigner" }
 mandelbrot-checker-app = { path = "../mandelbrot-checker/app" }
 manager-app = { path = "../manager/app" }
 parity-scale-codec = "3"
