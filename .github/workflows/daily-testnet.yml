@@ -39,6 +39,8 @@ jobs:
         env:
           TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
           TESTNET_SENDER: ${{ secrets.TESTNET_SENDER }}
+          TESTNET_CHECKER_CODE_ID: ${{ vars.TESTNET_CHECKER_CODE_ID }}
+          TESTNET_TOKEN_ID: ${{ vars.TESTNET_TOKEN_ID }}
         run: |
           set -euo pipefail
           ./script/run-testnet-daily.sh 2>&1 | tee daily-testnet.log
