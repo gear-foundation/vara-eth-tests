@@ -1,6 +1,5 @@
 import { getMirrorClient, MirrorClient } from "@vara-eth/api";
 import { Hex } from "viem";
-import path from "node:path";
 
 import {
   publicClient,
@@ -25,10 +24,8 @@ let stateHash: Hex;
 let codeId: Hex;
 
 const IDL_PATH = "./artifacts/idl/extended_vft.idl";
-const WASM_PATH = "./target/wasm32-gear/release/extended_vft.opt.wasm";
 
 const idlContent = readFileSync(IDL_PATH, "utf-8");
-const codeBytes = new Uint8Array(readFileSync(WASM_PATH));
 
 async function waitForStateHashChange(
   mirror: MirrorClient,
