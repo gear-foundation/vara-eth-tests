@@ -23,7 +23,16 @@ parity-scale-codec = { version = "3", default-features = false }
 [patch.crates-io]
 alloy = { version = "1.8", git = "https://github.com/gear-tech/alloy.git", branch = "better-gas-estimation" }
 gear-core = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-core-backend = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
 gear-core-errors = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-lazy-pages = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-lazy-pages-common = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-runtime-interface = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-sandbox = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-sandbox-env = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-sandbox-host = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-sandbox-interface = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
+gear-wasm-instrument = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
 gcore = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
 gprimitives = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
 gsys = { git = "https://github.com/gear-tech/gear", rev = "de3032de" }
