@@ -1,0 +1,16 @@
+constructor {
+  Init : ();
+};
+
+service Manager {
+  AddChecker : (checker: actor_id) -> null;
+  CheckPointsSet : (max_iter: u32, batch_size: u32, continue_checking: bool) -> null;
+  GenerateAndStorePoints : (width: u32, height: u32, x_min_num: i64, x_min_scale: u32, x_max_num: i64, x_max_scale: u32, y_min_num: i64, y_min_scale: u32, y_max_num: i64, y_max_scale: u32, points_per_call: u32, continue_generation: bool, check_points_after_generation: bool, max_iter: u32, batch_size: u32) -> null;
+  Restart : () -> null;
+  ResultCalculated : (indexes: vec u32, results: vec u32) -> null;
+  query GetCheckedCount : () -> u32;
+  query GetCheckers : () -> vec u8;
+  query GetPointsLen : () -> u32;
+  query GetResults : (start_index: u32, end_index: u32) -> vec u8;
+  query PointsSent : () -> u32;
+};

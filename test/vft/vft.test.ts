@@ -24,7 +24,7 @@ let vftId: Hex;
 let stateHash: Hex;
 let codeId: Hex;
 
-const IDL_PATH = "./target/wasm32-gear/release/extended_vft.idl";
+const IDL_PATH = "./artifacts/idl/extended_vft.idl";
 const WASM_PATH = "./target/wasm32-gear/release/extended_vft.opt.wasm";
 
 const idlContent = readFileSync(IDL_PATH, "utf-8");

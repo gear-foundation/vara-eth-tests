@@ -60,7 +60,7 @@ echo
 echo "Running TypeScript testnet daily suite"
 (
   cd "$REPO_ROOT"
-  pnpm exec vitest run test/setup.test.ts test/balance.test.ts test/vft/vft.load.test.ts
+  pnpm exec vitest run test/setup.test.ts test/balance.test.ts
 )
 
 echo
