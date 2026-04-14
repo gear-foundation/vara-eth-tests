@@ -21,15 +21,16 @@ use tokio::{
 };
 use tracing::{info, instrument};
 
-use ethexe_common::gear::CodeState;
+use ethexe_common::{gear::CodeState, injected::Promise};
 use ethexe_ethereum::{TryGetReceipt, abi::IMirror};
 use ethexe_sdk::VaraEthApi;
 use gear_core::ids::prelude::CodeIdExt as _;
-use gprimitives::{ActorId, CodeId, H256, U256};
+use gprimitives::{ActorId, CodeId, H256, MessageId, U256};
 
 const VFT_WASM_PATH: &str = "../target/wasm32-gear/release/extended_vft.opt.wasm";
 const CODE_VALIDATION_TIMEOUT: Duration = Duration::from_secs(180);
 const EVENT_TIMEOUT: Duration = Duration::from_secs(60);
+const INJECTED_PROMISE_TIMEOUT: Duration = Duration::from_secs(120);
 // 5 Vara
 const TOP_UP_AMOUNT: u128 = 5 * 1_000_000_000_000;
 const BURST_TOP_UP_AMOUNT: u128 = 25 * 1_000_000_000_000;
@@ -461,6 +462,22 @@ async fn mirror_mint_with_state_change(
     wait_for_state_hash_change(&ctx.api, ctx.program_id, previous_state_hash).await
 }
 
+async fn injected_watch_with_timeout(
+    ctx: &TestVftContext,
+    payload: Vec<u8>,
+    label: &str,
+) -> Result<(MessageId, Promise)> {
+    timeout(
+        INJECTED_PROMISE_TIMEOUT,
+        ctx.api
+            .mirror(ctx.program_id)
+            .send_message_injected_and_watch(payload, 0),
+    )
+    .await
+    .with_context(|| format!("timed out while waiting for {label} injected promise"))?
+    .with_context(|| format!("failed to send {label} injected message"))
+}
+
 async fn assert_initial_queries(ctx: &TestVftContext) -> Result<()> {
     let metadata = query_metadata(&ctx.api, ctx.program_id).await?;
     assert_metadata(ctx, &metadata);
@@ -796,6 +813,121 @@ async fn vft_full_lifecycle_on_testnet() -> Result<()> {
 
     log_step("Final State");
     assert_final_state(&ctx.api, ctx.program_id, ctx.owner_actor_id, scenario.recipient).await
+}
+
+#[tokio::test]
+async fn vft_injected_transfer_then_second_mint_on_testnet() -> Result<()> {
+    init_tracing();
+    log_step("Setup");
+    let ctx = setup_vft_program().await?;
+    let mirror = ctx.api.mirror(ctx.program_id);
+    let recipient = ActorId::from(123_u64);
+    let nonce_before_sequence = mirror.nonce().await?;
+
+    log_step("Mirror Mint");
+    let mut state_hash = mirror_mint_with_state_change(&ctx, MIRROR_MINT_AMOUNT).await?;
+    let nonce_after_mirror_mint = mirror.nonce().await?;
+
+    let owner_balance_after_mirror_mint =
+        balance_of(&ctx.api, ctx.program_id, ctx.owner_actor_id).await?;
+    let recipient_balance_after_mirror_mint = balance_of(&ctx.api, ctx.program_id, recipient).await?;
+    let supply_after_mirror_mint = total_supply(&ctx.api, ctx.program_id).await?;
+
+    assert_eq!(owner_balance_after_mirror_mint, MIRROR_MINT_AMOUNT);
+    assert_eq!(recipient_balance_after_mirror_mint, 0);
+    assert_eq!(supply_after_mirror_mint, MIRROR_MINT_AMOUNT);
+    assert!(
+        nonce_after_mirror_mint > nonce_before_sequence,
+        "mirror mint should advance mirror nonce before injected-only checks"
+    );
+
+    log_step("Injected Transfer");
+    let (_transfer_message_id, transfer_promise) = injected_watch_with_timeout(
+        &ctx,
+        vft_payload(
+            "Transfer",
+            (recipient, INJECTED_TRANSFER_AMOUNT.to_string()),
+        ),
+        "first injected transfer",
+    )
+    .await?;
+
+    assert_manual_success(&transfer_promise.reply.code.to_bytes(), "first injected transfer");
+    assert!(decode_sails_reply::<bool>(
+        &transfer_promise.reply.payload,
+        "Vft",
+        "Transfer",
+    )?);
+    info!(
+        reply_code = ?transfer_promise.reply.code.to_bytes(),
+        "First injected transfer promise received"
+    );
+
+    state_hash = wait_for_state_hash_change(&ctx.api, ctx.program_id, state_hash).await?;
+
+    let owner_balance_after_transfer = balance_of(&ctx.api, ctx.program_id, ctx.owner_actor_id).await?;
+    let recipient_balance_after_transfer = balance_of(&ctx.api, ctx.program_id, recipient).await?;
+    let supply_after_transfer = total_supply(&ctx.api, ctx.program_id).await?;
+
+    assert_eq!(
+        owner_balance_after_transfer,
+        MIRROR_MINT_AMOUNT - INJECTED_TRANSFER_AMOUNT
+    );
+    assert_eq!(recipient_balance_after_transfer, INJECTED_TRANSFER_AMOUNT);
+    assert_eq!(supply_after_transfer, MIRROR_MINT_AMOUNT);
+
+    log_step("Second Injected Mint");
+    let (_second_mint_message_id, second_mint_promise) = injected_watch_with_timeout(
+        &ctx,
+        vft_payload(
+            "Mint",
+            (ctx.owner_actor_id, MIRROR_MINT_AMOUNT.to_string()),
+        ),
+        "second injected mint",
+    )
+    .await?;
+
+    assert_manual_success(&second_mint_promise.reply.code.to_bytes(), "second injected mint");
+    assert!(decode_sails_reply::<bool>(
+        &second_mint_promise.reply.payload,
+        "Vft",
+        "Mint",
+    )?);
+    info!(
+        reply_code = ?second_mint_promise.reply.code.to_bytes(),
+        "Second injected mint promise received"
+    );
+
+    state_hash = wait_for_state_hash_change(&ctx.api, ctx.program_id, state_hash).await?;
+
+    let owner_balance_final = balance_of(&ctx.api, ctx.program_id, ctx.owner_actor_id).await?;
+    let recipient_balance_final = balance_of(&ctx.api, ctx.program_id, recipient).await?;
+    let supply_final = total_supply(&ctx.api, ctx.program_id).await?;
+    let nonce_after_sequence = mirror.nonce().await?;
+
+    assert_eq!(
+        owner_balance_final,
+        MIRROR_MINT_AMOUNT - INJECTED_TRANSFER_AMOUNT + MIRROR_MINT_AMOUNT
+    );
+    assert_eq!(recipient_balance_final, INJECTED_TRANSFER_AMOUNT);
+    assert_eq!(supply_final, MIRROR_MINT_AMOUNT + MIRROR_MINT_AMOUNT);
+    assert_eq!(
+        nonce_after_sequence,
+        nonce_after_mirror_mint,
+        "injected-only sequence should not advance mirror nonce beyond the mirror mint"
+    );
+    info!(
+        %state_hash,
+        owner_balance_final,
+        recipient_balance_final,
+        supply_final,
+        nonce_before_sequence = %nonce_before_sequence,
+        nonce_after_mirror_mint = %nonce_after_mirror_mint,
+        nonce_after_sequence = %nonce_after_sequence,
+        "Injected transfer then second mint sequence reached expected final state"
+    );
+
+    Ok(())
 }
 
 #[tokio::test]

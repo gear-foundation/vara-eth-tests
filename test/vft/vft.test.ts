@@ -67,6 +67,30 @@ async function waitForReplyWithReconnect(
   }
 }
 
+async function createDefaultInjectedTransaction(
+  payload: Hex,
+  label: string,
+) {
+  const injected = await varaEthApi.createInjectedTransaction({
+    destination: vftId,
+    payload,
+    value: 0n,
+  });
+
+  const recipient = injected.setDefaultValidator();
+  console.log(
+    `[${label}] Prepared injected transaction`,
+    {
+      recipient,
+      messageId: injected.messageId,
+      txHash: injected.txHash,
+      referenceBlock: injected.referenceBlock,
+    },
+  );
+
+  return injected;
+}
+
 async function waitForStateHashChange(
   mirror: MirrorClient,
   prevStateHash: Hex,
@@ -353,11 +377,10 @@ describe("injected txs: transfer", () => {
       varaAmount,
     );
     const prevStateHash = stateHash ?? (await mirror.stateHash());
-    const injected = await varaEthApi.createInjectedTransaction({
-      destination: vftId,
-      payload, // Encoded message payload
-      value: 0n,
-    });
+    const injected = await createDefaultInjectedTransaction(
+      payload,
+      "should transfer tokens",
+    );
     const reply = await injected.sendAndWaitForPromise();
     expectManualSuccessPromise(reply);
     const result = sails.services.Vft.functions.Transfer.decodeResult(reply.payload);
@@ -396,13 +419,11 @@ describe("injected txs: mint", () => {
       varaAddress,
       varaAmount,
     );
-
-    const injected = await varaEthApi.createInjectedTransaction({
-      destination: vftId,
-      payload,
-      value: 0n,
-    });
     const prevStateHash = stateHash ?? (await mirror.stateHash());
+    const injected = await createDefaultInjectedTransaction(
+      payload,
+      "should mint tokens",
+    );
     const reply = await injected.sendAndWaitForPromise();
     expectManualSuccessPromise(reply);
     const result = sails.services.Vft.functions.Mint.decodeResult(reply.payload);
