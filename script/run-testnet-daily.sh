@@ -43,6 +43,13 @@ update_env_value "CHECKER_CODE_ID" "$TESTNET_CHECKER_CODE_ID"
 update_env_value "TOKEN_ID" "$TESTNET_TOKEN_ID"
 
 echo
+echo "Building release artifacts"
+(
+  cd "$REPO_ROOT"
+  cargo build --release
+)
+
+echo
 echo "Running Rust testnet daily suite"
 (
   cd "$REPO_ROOT"
