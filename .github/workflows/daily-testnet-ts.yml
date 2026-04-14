@@ -46,6 +46,23 @@ jobs:
           name: daily-testnet-ts-log
           path: daily-testnet-ts.log
 
+      - name: Analyze run with AI
+        if: always()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LOG_PATH: daily-testnet-ts.log
+          OUTPUT_PATH: daily-testnet-ts-ai-summary.md
+        run: |
+          set -euo pipefail
+          node ./script/analyze-testnet-ts-run.mjs | tee daily-testnet-ts-ai-summary.md
+
+      - name: Upload AI summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-testnet-ts-ai-summary
+          path: daily-testnet-ts-ai-summary.md
+
       - name: Notify Telegram
         if: always()
         env:
@@ -54,9 +71,17 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           STATUS: ${{ job.status }}
         run: |
+          SUMMARY_FILE="daily-testnet-ts-ai-summary.md"
+          if [ -f "$SUMMARY_FILE" ]; then
+            SUMMARY=$(cat "$SUMMARY_FILE")
+          else
+            SUMMARY="AI summary unavailable."
+          fi
           curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
             --data-urlencode text="Daily Testnet TS: ${STATUS}
           Repo: ${{ github.repository }}
           Branch: ${{ github.ref_name }}
-          Run: ${RUN_URL}"
+          Run: ${RUN_URL}
+
+          ${SUMMARY}"
