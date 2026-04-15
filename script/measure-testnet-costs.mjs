@@ -96,6 +96,7 @@ if (mode === "before") {
   console.log(
     `TEST_COSTS before eth=${formatUnits(BigInt(balances.eth), 18)} wvara=${formatUnits(BigInt(balances.wvara), 12)}`,
   );
+  process.exit(0);
 } else {
   if (!existsSync(snapshotPath)) {
     throw new Error(`Missing cost snapshot: ${snapshotPath}`);
@@ -111,4 +112,5 @@ if (mode === "before") {
   console.log(
     `TEST_COSTS delta eth=${formatDelta(ethDelta, 18)} wvara=${formatDelta(wvaraDelta, 12)}`,
   );
+  process.exit(0);
 }

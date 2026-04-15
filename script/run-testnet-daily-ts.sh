@@ -50,6 +50,7 @@ echo "Running TypeScript testnet daily suite"
 set +e
 (
   cd "$REPO_ROOT"
+  echo "Starting Vitest daily suite"
   pnpm exec vitest run test/setup.test.ts test/balance.test.ts test/vft/vft.test.ts
 )
 test_status=$?
