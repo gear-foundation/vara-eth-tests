@@ -9,7 +9,7 @@ REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 : "${TESTNET_SENDER:?TESTNET_SENDER is required}"
 : "${TESTNET_TOKEN_ID:?TESTNET_TOKEN_ID is required}"
 
-echo "Preparing testnet environment for TypeScript daily suite"
+echo "Preparing testnet environment for TypeScript weekly load suite"
 TESTNET_PRIVATE_KEY="$TESTNET_PRIVATE_KEY" \
 TESTNET_SENDER="$TESTNET_SENDER" \
   "$REPO_ROOT/script/use-testnet-env.sh"
@@ -35,34 +35,18 @@ update_env_value() {
   ' "$REPO_ROOT/.env" > "$tmp_file"
 
   mv "$tmp_file" "$REPO_ROOT/.env"
-  echo "Updated $env_key for testnet TypeScript daily run"
+  echo "Updated $env_key for testnet TypeScript weekly load run"
 }
 
 update_env_value "TOKEN_ID" "$TESTNET_TOKEN_ID"
 
 echo
-echo "Running TypeScript testnet daily suite"
+echo "Running TypeScript testnet weekly load suite"
 (
   cd "$REPO_ROOT"
-  node ./script/measure-testnet-costs.mjs before
+  VFT_INJECTED_VALIDATOR_MODE="${VFT_INJECTED_VALIDATOR_MODE:-default}" \
+    pnpm exec vitest run test/vft/vft.load.test.ts
 )
-
-set +e
-(
-  cd "$REPO_ROOT"
-  pnpm exec vitest run test/setup.test.ts test/balance.test.ts test/vft/vft.test.ts
-)
-test_status=$?
-set -e
-
-(
-  cd "$REPO_ROOT"
-  node ./script/measure-testnet-costs.mjs after
-)
-
-if [ "$test_status" -ne 0 ]; then
-  exit "$test_status"
-fi
 
 echo
-echo "TypeScript testnet daily suite finished successfully."
+echo "TypeScript testnet weekly load suite finished successfully."

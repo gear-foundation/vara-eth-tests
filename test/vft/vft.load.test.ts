@@ -115,6 +115,33 @@ async function readTotalSupply() {
   return BigInt(sails.services.Vft.queries.TotalSupply.decodeResult(reply.payload));
 }
 
+async function createInjectedMintTransaction(payload: Hex, index: number) {
+  const injected = await varaEthApi.createInjectedTransaction({
+    destination: vftId,
+    payload,
+    value: 0n,
+  });
+
+  const validatorMode = process.env.VFT_INJECTED_VALIDATOR_MODE || "default";
+  const recipient =
+    validatorMode === "slot"
+      ? await injected.setSlotValidator()
+      : injected.setDefaultValidator();
+
+  console.log(
+    `[vft-load-injected-${index}] Prepared injected transaction`,
+    {
+      validatorMode,
+      recipient,
+      messageId: injected.messageId,
+      txHash: injected.txHash,
+      referenceBlock: injected.referenceBlock,
+    },
+  );
+
+  return injected;
+}
+
 async function waitForExpectedTokenState(
   expectedBalance: bigint,
   expectedTotalSupply: bigint,
@@ -309,13 +336,8 @@ describe("vft load", () => {
     );
 
     const replies = await Promise.all(
-      Array.from({ length: LOAD_CONFIG.injectedBurstSize }, async () => {
-        const injected = await varaEthApi.createInjectedTransaction({
-          destination: vftId,
-          payload,
-          value: 0n,
-        });
-
+      Array.from({ length: LOAD_CONFIG.injectedBurstSize }, async (_, index) => {
+        const injected = await createInjectedMintTransaction(payload, index);
         return injected.sendAndWaitForPromise();
       }),
     );

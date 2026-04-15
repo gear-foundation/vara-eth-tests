@@ -1,0 +1,49 @@
+name: Weekly Testnet Load
+run-name: Weekly Testnet Load (${{ github.ref_name }})
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-testnet-load
+  cancel-in-progress: false
+
+jobs:
+  weekly-testnet-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run weekly testnet load suite
+        env:
+          TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
+          TESTNET_SENDER: ${{ secrets.TESTNET_SENDER }}
+          TESTNET_TOKEN_ID: ${{ vars.TESTNET_TOKEN_ID }}
+          VFT_INJECTED_VALIDATOR_MODE: default
+        run: |
+          set -euo pipefail
+          ./script/run-testnet-weekly-load-ts.sh 2>&1 | tee weekly-testnet-load.log
+
+      - name: Upload weekly testnet load log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-testnet-load-log
+          path: weekly-testnet-load.log
