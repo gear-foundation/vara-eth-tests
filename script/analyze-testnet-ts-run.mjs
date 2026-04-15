@@ -53,17 +53,20 @@ const log = readText(LOG_PATH, 24_000);
 const prompt = `
 You are analyzing a GitHub Actions run for this repository.
 
-Return a concise Markdown report with exactly these sections:
-1. Summary
-2. Probable Root Cause
-3. Suggested Next Step
+Return a concise plain-text report in exactly this format:
+Summary: <one short paragraph>
+Risk: <one short paragraph>
+Next: <one short paragraph>
 
 Rules:
 - Be concrete and repository-specific.
 - If the run succeeded, say that clearly and mention any residual risk.
 - If the run failed, identify the most likely failing layer: config, CI bootstrap, RPC/network, test logic, or flaky external dependency.
 - Prefer evidence from the log over speculation.
-- Keep the whole report under 220 words.
+- Optimize for Telegram readability.
+- Keep the whole report under 90 words.
+- Each line should be compact and easy to scan on mobile.
+- Do not use Markdown headings, bullets, numbering, or code fences.
 
 Repository rules:
 ${agents}

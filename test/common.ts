@@ -26,7 +26,7 @@ export let ethereumClient: EthereumClient;
 export let accountAddress: `0x${string}`;
 export let sails: Sails;
 
-export async function init() {
+async function connect() {
   const transport = webSocket(CONFIG.eth.rpc);
   const account = privateKeyToAccount(CONFIG.privateKey, { nonceManager });
 
@@ -41,9 +41,33 @@ export async function init() {
   );
   ethereumClient = varaEthApi.eth;
   accountAddress = await ethereumClient.signer.getAddress();
+}
+
+export async function init() {
+  await connect();
 
   const parser = await SailsIdlParser.new();
   sails = new Sails(parser);
+}
+
+export async function reconnect() {
+  await connect();
+}
+
+export function isRetryableConnectionError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("operation was canceled") ||
+    message.includes("connection closed") ||
+    message.includes("socket closed") ||
+    message.includes("websocket") ||
+    message.includes("transport") ||
+    message.includes("network")
+  );
 }
 
 export const wait1Block = () =>

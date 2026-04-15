@@ -9,6 +9,8 @@ import {
   accountAddress,
   wait1Block,
   sails,
+  reconnect,
+  isRetryableConnectionError,
 } from "../common";
 import { readFileSync } from "node:fs";
 import {
@@ -26,6 +28,68 @@ let codeId: Hex;
 const IDL_PATH = "./artifacts/idl/extended_vft.idl";
 
 const idlContent = readFileSync(IDL_PATH, "utf-8");
+
+async function waitForReplyWithReconnect(
+  address: Hex,
+  setupReplyListener: () => Promise<{
+    blockNumber: number;
+    message: { id: Hex };
+    waitForReply: () => Promise<any>;
+  }>,
+  label: string,
+) {
+  const listener = await setupReplyListener();
+
+  try {
+    return await listener.waitForReply();
+  } catch (error) {
+    if (!isRetryableConnectionError(error)) {
+      throw error;
+    }
+
+    console.warn(
+      `[${label}] Reply listener interrupted, reconnecting and waiting for reply again`,
+      error,
+    );
+
+    await reconnect();
+
+    const freshMirror = getMirrorClient({
+      address,
+      publicClient,
+      signer: ethereumClient.signer,
+    });
+
+    return freshMirror.waitForReply(
+      listener.message.id,
+      BigInt(listener.blockNumber),
+    );
+  }
+}
+
+async function createDefaultInjectedTransaction(
+  payload: Hex,
+  label: string,
+) {
+  const injected = await varaEthApi.createInjectedTransaction({
+    destination: vftId,
+    payload,
+    value: 0n,
+  });
+
+  const recipient = injected.setDefaultValidator();
+  console.log(
+    `[${label}] Prepared injected transaction`,
+    {
+      recipient,
+      messageId: injected.messageId,
+      txHash: injected.txHash,
+      referenceBlock: injected.referenceBlock,
+    },
+  );
+
+  return injected;
+}
 
 async function waitForStateHashChange(
   mirror: MirrorClient,
@@ -158,9 +222,11 @@ describe("create token", () => {
     console.log(`[should send init message] Tx hash: ${txHash}`);
     console.log(`[should send init message] Message`, await tx.getMessage());
 
-    const { waitForReply } = await tx.setupReplyListener();
-
-    const reply = await waitForReply();
+    const reply = await waitForReplyWithReconnect(
+      vftId,
+      () => tx.setupReplyListener(),
+      "should send init message",
+    );
 
     console.log(`[should send init message] Reply received`, reply);
 
@@ -243,8 +309,11 @@ describe("send messages: mint", () => {
 
     console.log(`[should mint tokens] Sent message:`, await tx.getMessage());
 
-    const { waitForReply } = await tx.setupReplyListener();
-    const reply = await waitForReply();
+    const reply = await waitForReplyWithReconnect(
+      vftId,
+      () => tx.setupReplyListener(),
+      "should mint tokens",
+    );
 
     console.log(`[should mint tokens] Reply received:`, reply);
 
@@ -308,11 +377,10 @@ describe("injected txs: transfer", () => {
       varaAmount,
     );
     const prevStateHash = stateHash ?? (await mirror.stateHash());
-    const injected = await varaEthApi.createInjectedTransaction({
-      destination: vftId,
-      payload, // Encoded message payload
-      value: 0n,
-    });
+    const injected = await createDefaultInjectedTransaction(
+      payload,
+      "should transfer tokens",
+    );
     const reply = await injected.sendAndWaitForPromise();
     expectManualSuccessPromise(reply);
     const result = sails.services.Vft.functions.Transfer.decodeResult(reply.payload);
@@ -351,13 +419,11 @@ describe("injected txs: mint", () => {
       varaAddress,
       varaAmount,
     );
-
-    const injected = await varaEthApi.createInjectedTransaction({
-      destination: vftId,
-      payload,
-      value: 0n,
-    });
     const prevStateHash = stateHash ?? (await mirror.stateHash());
+    const injected = await createDefaultInjectedTransaction(
+      payload,
+      "should mint tokens",
+    );
     const reply = await injected.sendAndWaitForPromise();
     expectManualSuccessPromise(reply);
     const result = sails.services.Vft.functions.Mint.decodeResult(reply.payload);
@@ -425,8 +491,11 @@ describe("negative replies", () => {
     const receipt = await tx.sendAndWaitForReceipt();
     expect(receipt.status).toBe("success");
 
-    const { waitForReply } = await tx.setupReplyListener();
-    const reply = await waitForReply();
+    const reply = await waitForReplyWithReconnect(
+      vftId,
+      () => tx.setupReplyListener(),
+      "negative transfer insufficient balance",
+    );
 
     expectErrorReplyCode(reply.replyCode);
     expect(decodeScaleString(reply.payload as Hex)).toBe("InsufficientBalance");

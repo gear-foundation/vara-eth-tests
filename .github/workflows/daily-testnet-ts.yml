@@ -1,4 +1,5 @@
 name: Daily Testnet TS
+run-name: Daily Testnet TS (${{ github.ref_name }})
 
 on:
   schedule:
@@ -12,7 +13,7 @@ concurrency:
 jobs:
   daily-testnet-ts:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -77,11 +78,11 @@ jobs:
           else
             SUMMARY="AI summary unavailable."
           fi
+          MESSAGE=$(printf 'Daily Testnet TS\nStatus: %s\nBranch: %s\nRun: %s\n\n%s' \
+            "${STATUS}" \
+            "${{ github.ref_name }}" \
+            "${RUN_URL}" \
+            "${SUMMARY}")
           curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode text="Daily Testnet TS: ${STATUS}
-          Repo: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Run: ${RUN_URL}
-
-          ${SUMMARY}"
+            --data-urlencode "text=${MESSAGE}"
