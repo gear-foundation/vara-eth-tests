@@ -77,10 +77,16 @@ async function createDefaultInjectedTransaction(
     value: 0n,
   });
 
-  const recipient = injected.setDefaultValidator();
+  const validatorMode = process.env.VFT_INJECTED_VALIDATOR_MODE || "default";
+  const recipient =
+    validatorMode === "slot"
+      ? await injected.setSlotValidator()
+      : injected.setDefaultValidator();
+
   console.log(
     `[${label}] Prepared injected transaction`,
     {
+      validatorMode,
       recipient,
       messageId: injected.messageId,
       txHash: injected.txHash,

@@ -6,10 +6,6 @@ const LOG_PATH = process.env.LOG_PATH || "daily-testnet-ts.log";
 const OUTPUT_PATH =
   process.env.OUTPUT_PATH || "daily-testnet-ts-ai-summary.md";
 
-if (!OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY is required");
-}
-
 function readText(path, maxChars) {
   if (!existsSync(path)) {
     return `File not found: ${path}`;
@@ -41,6 +37,22 @@ function extractResponseText(data) {
   }
 
   return parts.join("\n").trim();
+}
+
+function writeFallbackSummary(reason) {
+  const summary = [
+    "Summary: AI analysis skipped; test status is available in the GitHub Actions log.",
+    `Risk: ${reason}`,
+    "Next: Check the uploaded test log artifact for details if the workflow failed.",
+  ].join("\n");
+
+  writeFileSync(OUTPUT_PATH, `${summary}\n`);
+  console.log(summary);
+}
+
+if (!OPENAI_API_KEY) {
+  writeFallbackSummary("OPENAI_API_KEY is not configured.");
+  process.exit(0);
 }
 
 const agents = readText("AGENTS.md", 12_000);
@@ -102,14 +114,16 @@ const response = await fetch("https://api.openai.com/v1/responses", {
 
 if (!response.ok) {
   const body = await response.text();
-  throw new Error(`OpenAI API error ${response.status}: ${body}`);
+  writeFallbackSummary(`OpenAI API returned ${response.status}; ${body.slice(0, 300)}`);
+  process.exit(0);
 }
 
 const data = await response.json();
 const summary = extractResponseText(data);
 
 if (!summary) {
-  throw new Error("OpenAI API returned an empty analysis");
+  writeFallbackSummary("OpenAI API returned an empty analysis.");
+  process.exit(0);
 }
 
 writeFileSync(OUTPUT_PATH, `${summary}\n`);
